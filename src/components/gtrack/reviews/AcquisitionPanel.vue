@@ -9,7 +9,7 @@
             <div class="col-span-12 lg:col-span-7">
                 <div class="flex flex-col gap-6 sticky top-6">
                     <!-- Visual Preview Area -->
-                    <div class="bg-gray-200 p-4 rounded-xl flex justify-center items-center overflow-hidden relative pattern-grid min-h-[600px]">
+                    <div class="bg-gray-200 p-12 rounded-xl flex justify-center items-center relative pattern-grid min-h-[600px]">
                         
                         <!-- Loading Skeleton -->
                         <div v-if="loading" class="w-[350px] h-[495px] bg-white rounded-lg p-4 flex flex-col gap-4 shadow-xl">
@@ -32,20 +32,20 @@
                         <div v-else class="relative">
                             <!-- Top Dimension -->
                             <div class="absolute -top-8 left-0 w-full flex flex-col items-center">
-                                <span class="text-xs text-gray-400 mb-1">{{ previewDimensions.width }}</span>
-                                <div class="w-full border-t border-gray-300 border-dashed relative">
-                                    <div class="absolute left-0 -top-1 w-px h-2 bg-gray-300"></div>
-                                    <div class="absolute right-0 -top-1 w-px h-2 bg-gray-300"></div>
+                                <span class="text-xs text-[#3b83f6] mb-1">{{ previewDimensions.width }}</span>
+                                <div class="w-full border-t border-[#3b83f6] border-dashed relative">
+                                    <div class="absolute left-0 -top-1 w-px h-2 bg-[#3b83f6]"></div>
+                                    <div class="absolute right-0 -top-1 w-px h-2 bg-[#3b83f6]"></div>
                                 </div>
                             </div>
 
                             <!-- Left Dimension -->
-                            <div class="absolute -left-12 top-0 h-full flex flex-row items-center">
-                                <div class="h-full border-l border-gray-300 border-dashed relative mr-2">
-                                    <div class="absolute -left-1 top-0 w-2 h-px bg-gray-300"></div>
-                                    <div class="absolute -left-1 bottom-0 w-2 h-px bg-gray-300"></div>
+                            <div class="absolute right-full top-0 h-full flex flex-row justify-end items-center pr-4">
+                                <span class="text-xs text-[#3b83f6] -rotate-90 whitespace-nowrap origin-center transform rotate-180 mr-2">{{ previewDimensions.height }}</span>
+                                <div class="h-full border-l border-[#3b83f6] border-dashed relative">
+                                    <div class="absolute -left-1 top-0 w-2 h-px bg-[#3b83f6]"></div>
+                                    <div class="absolute -left-1 bottom-0 w-2 h-px bg-[#3b83f6]"></div>
                                 </div>
-                                <span class="text-xs text-gray-400 -rotate-90 whitespace-nowrap">{{ previewDimensions.height }}</span>
                             </div>
 
                             <!-- THE POSTER / CARD -->
@@ -203,6 +203,8 @@
                                 </div>
                             </div>
                         </div>
+
+                    </div>
 
                     <div class="flex justify-center gap-2">
                         <Button label="Pobierz PDF (A4)" icon="pi pi-file-pdf" severity="secondary" @click="downloadFile('pdf', 'a4')" :disabled="loading" />
@@ -641,3 +643,4 @@ const downloadFile = (type, format) => {
     font-size: 0.8rem !important;
 }
 </style>
+

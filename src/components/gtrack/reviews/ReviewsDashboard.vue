@@ -7,20 +7,20 @@
          :key="tab.id"
          :label="tab.label" 
          :icon="tab.icon"
-         :severity="activeTab === tab.id ? 'primary' : 'secondary'" 
-         :text="activeTab !== tab.id"
-         @click="activeTab = tab.id"
+         :severity="isTabActive(tab.id) ? 'primary' : 'secondary'" 
+         :text="!isTabActive(tab.id)"
+         @click="navigateToTab(tab.id)"
          size="small"
        />
        
        <div class="ml-auto flex gap-2">
          <Button 
-            v-if="activeTab === 'overview'"
+            v-if="isTabActive('overview')"
             label="Pozyskaj Opinie" 
             icon="pi pi-share-alt" 
             size="small"
             outlined
-            @click="activeTab = 'acquisition'"
+            @click="navigateToTab('acquisition')"
           />
        </div>
     </div>
@@ -35,31 +35,8 @@
            <p class="text-gray-500">Zarządzaj reputacją swojej firmy w jednym miejscu.</p>
         </div>
 
-        <!-- Tab Content -->
-        <div v-if="activeTab === 'overview'">
-            <!-- Stats Dashboard -->
-            <ReviewsStats v-if="stats" :stats="stats" />
-            <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <Skeleton height="150px" class="rounded-lg"></Skeleton>
-                <Skeleton height="150px" class="rounded-lg"></Skeleton>
-                <Skeleton height="150px" class="rounded-lg"></Skeleton>
-            </div>
-
-            <!-- Main Feed -->
-            <ReviewsList />
-        </div>
-
-        <div v-else-if="activeTab === 'acquisition'">
-            <AcquisitionPanel />
-        </div>
-
-        <div v-else-if="activeTab === 'intercepted'">
-            <InterceptedReviews />
-        </div>
-
-        <div v-else-if="activeTab === 'templates'">
-            <ResponseTemplates />
-        </div>
+        <!-- Router View for Sub-tabs -->
+        <router-view :stats="stats" />
 
       </div>
     </div>
@@ -71,29 +48,37 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import Button from 'primevue/button';
-import Skeleton from 'primevue/skeleton';
 import Toast from 'primevue/toast';
 import DynamicDialog from 'primevue/dynamicdialog';
 import ConfirmDialog from 'primevue/confirmdialog';
-
-import ReviewsStats from './ReviewsStats.vue';
-import ReviewsList from './ReviewsList.vue';
-import ResponseTemplates from './ResponseTemplates.vue';
-import AcquisitionPanel from './AcquisitionPanel.vue';
-import InterceptedReviews from './InterceptedReviews.vue';
 import { ReviewsService } from '../../../services/ReviewsService';
 
 const stats = ref(null);
-const activeTab = ref('overview');
+const route = useRoute();
+const router = useRouter();
 
 const tabs = [
-  { id: 'overview', label: 'Przegląd', icon: 'pi pi-home' },
-  { id: 'acquisition', label: 'Pozyskiwanie Opinii', icon: 'pi pi-megaphone' },
-  { id: 'intercepted', label: 'Przechwycone Opinie', icon: 'pi pi-inbox' },
-  { id: 'templates', label: 'Szablony Odpowiedzi', icon: 'pi pi-list' }
+  { id: 'overview', label: 'Przegląd', icon: 'pi pi-home', routeName: 'reviews-overview' },
+  { id: 'acquisition', label: 'Pozyskiwanie Opinii', icon: 'pi pi-megaphone', routeName: 'reviews-acquisition' },
+  { id: 'intercepted', label: 'Przechwycone Opinie', icon: 'pi pi-inbox', routeName: 'reviews-intercepted' },
+  { id: 'templates', label: 'Szablony Odpowiedzi', icon: 'pi pi-list', routeName: 'reviews-templates' }
 ];
+
+const isTabActive = (tabId) => {
+    // Simple check based on route name mapping
+    const mapping = tabs.find(t => t.id === tabId);
+    return mapping && route.name === mapping.routeName;
+};
+
+const navigateToTab = (tabId) => {
+    const mapping = tabs.find(t => t.id === tabId);
+    if (mapping) {
+        router.push({ name: mapping.routeName, params: { locationId: route.params.locationId } });
+    }
+};
 
 const loadStats = async () => {
   try {
