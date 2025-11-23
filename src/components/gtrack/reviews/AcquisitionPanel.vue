@@ -250,7 +250,7 @@
                 </div>
 
                 <!-- RIGHT COLUMN: SETTINGS -->
-                <div class="col-span-1 lg:col-span-2">
+                <div class="col-span-1 md:col-span-2">
                     <div v-if="loading" class="flex flex-col gap-4">
                         <Skeleton height="3rem" class="mb-2" />
                         <Skeleton height="3rem" class="mb-2" />
