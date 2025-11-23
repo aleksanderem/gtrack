@@ -10,11 +10,17 @@ import ReviewsOverview from '../components/gtrack/reviews/ReviewsOverview.vue';
 import AcquisitionPanel from '../components/gtrack/reviews/AcquisitionPanel.vue';
 import InterceptedReviews from '../components/gtrack/reviews/InterceptedReviews.vue';
 import ResponseTemplates from '../components/gtrack/reviews/ResponseTemplates.vue';
+import PublicFeedbackView from '../views/PublicFeedbackView.vue';
 
 const routes = [
   {
     path: '/',
     redirect: '/demo-location/map'
+  },
+  {
+    path: '/feedback/:locationId',
+    name: 'public-feedback',
+    component: PublicFeedbackView
   },
   {
     path: '/:locationId',

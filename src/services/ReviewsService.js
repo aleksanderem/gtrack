@@ -167,6 +167,16 @@ let MOCK_ACQUISITION_SETTINGS = {
   google_logo_size: 0.8,
   footer_text: 'Oceń nas w',
 
+  form_fields: [
+    { key: 'name', label: 'Imię', visible: true, required: false },
+    { key: 'surname', label: 'Nazwisko', visible: true, required: false },
+    { key: 'phone', label: 'Telefon', visible: true, required: false },
+    { key: 'email', label: 'Email', visible: true, required: true },
+    { key: 'order_no', label: 'Numer zamówienia', visible: false, required: false },
+    { key: 'service_name', label: 'Nazwa usługi', visible: false, required: false },
+    { key: 'employee_name', label: 'Pracownik', visible: false, required: false }
+  ],
+
   qr_border_width: 4,
   qr_border_color: '111827' // gray-900
 };
@@ -292,5 +302,20 @@ export const ReviewsService = {
   async getInternalFeedbacks() {
     await delay(700);
     return [...MOCK_INTERNAL_FEEDBACKS];
+  },
+
+  async saveInternalFeedback(feedback) {
+    await delay(800);
+    const newFeedback = {
+        id: 'f' + Date.now(),
+        date: new Date().toISOString(),
+        customer_name: feedback.name || 'Anonim',
+        rating: feedback.rating,
+        comment: feedback.message,
+        status: 'new',
+        details: feedback
+    };
+    MOCK_INTERNAL_FEEDBACKS.unshift(newFeedback);
+    return newFeedback;
   }
 };
