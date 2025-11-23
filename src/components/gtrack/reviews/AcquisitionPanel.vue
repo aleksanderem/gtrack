@@ -1,13 +1,18 @@
 <template>
-  <div class="flex flex-col gap-8 font-sans">
+  <div class="flex flex-col gap-6 font-sans">
     <!-- Generator Section (Side-by-Side) - Force Refresh -->
     <Card class="shadow-sm border border-gray-100">
-      <template #title>Generator Materiałów</template>
+      <template #title>
+        <div class="flex flex-col gap-1 mb-4">
+            <span>Generator Materiałów</span>
+            <span class="text-sm text-gray-500 font-normal">Twórz i personalizuj materiały marketingowe (plakaty, wizytówki) zachęcające klientów do wystawiania opinii.</span>
+        </div>
+      </template>
       <template #content>
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <!-- LEFT COLUMN: PREVIEW -->
             <div class="col-span-12 lg:col-span-7">
-                <div class="flex flex-col gap-6 sticky top-6">
+                <div class="flex flex-col gap-4 sticky top-6">
                     <!-- Visual Preview Area -->
                     <div class="bg-gray-200 p-12 rounded-xl flex justify-center items-center relative pattern-grid min-h-[600px]">
                         
@@ -206,10 +211,15 @@
 
                     </div>
 
-                    <div class="flex justify-center gap-2">
-                        <Button label="Pobierz PDF (A4)" icon="pi pi-file-pdf" severity="secondary" @click="downloadFile('pdf', 'a4')" :disabled="loading" />
-                        <Button label="Pobierz PDF (Wizytówka)" icon="pi pi-id-card" severity="secondary" @click="downloadFile('pdf', 'card')" :disabled="loading" />
-                        <Button label="Pobierz PNG" icon="pi pi-image" severity="secondary" @click="downloadFile('png', 'high-res')" :disabled="loading" />
+                    <div class="flex justify-center">
+                        <Button label="Pobierz" icon="pi pi-download" @click="toggleDownload" :disabled="loading" class="!text-[0.9rem]" />
+                        <Popover ref="op">
+                            <div class="flex flex-col gap-2 w-48">
+                                <Button label="PDF (A4)" icon="pi pi-file-pdf" severity="secondary" text @click="downloadAndClose('pdf', 'a4')" class="w-full justify-start !text-[0.9rem]" />
+                                <Button label="PDF (Wizytówka)" icon="pi pi-id-card" severity="secondary" text @click="downloadAndClose('pdf', 'card')" class="w-full justify-start !text-[0.9rem]" />
+                                <Button label="PNG" icon="pi pi-image" severity="secondary" text @click="downloadAndClose('png', 'high-res')" class="w-full justify-start !text-[0.9rem]" />
+                            </div>
+                        </Popover>
                     </div>
                 </div>
             </div>
@@ -420,7 +430,12 @@
 
     <!-- Landing Page Config (Full Width) -->
     <Card class="shadow-sm border border-gray-100">
-        <template #title>Konfiguracja Strony Oceny (Landing Page)</template>
+        <template #title>
+            <div class="flex flex-col gap-1 mb-4">
+                <span>Konfiguracja Strony Oceny (Landing Page)</span>
+                <span class="text-sm text-gray-500 font-normal">Dostosuj wygląd i zachowanie strony, na którą trafią klienci po zeskanowaniu kodu QR.</span>
+            </div>
+        </template>
         <template #content>
             <div class="flex flex-col gap-4">
                 <div class="flex flex-col gap-2">
@@ -465,6 +480,7 @@ import AccordionHeader from 'primevue/accordionheader';
 import AccordionContent from 'primevue/accordioncontent';
 import Skeleton from 'primevue/skeleton';
 import { useToast } from 'primevue/usetoast';
+import Popover from 'primevue/popover';
 import { ReviewsService } from '../../../services/ReviewsService';
 import PositionControls from './PositionControls.vue';
 import { useQRCode } from '@vueuse/integrations/useQRCode';
@@ -531,6 +547,16 @@ const styleOptions = [
 const saving = ref(false);
 const loading = ref(true);
 const toast = useToast();
+const op = ref();
+
+const toggleDownload = (event) => {
+    op.value.toggle(event);
+};
+
+const downloadAndClose = (type, format) => {
+    downloadFile(type, format);
+    op.value.hide();
+};
 
 // QR Code Generation
 const qrContent = ref('https://gtrack.com/review/mock-id'); // Mock URL
@@ -641,6 +667,12 @@ const downloadFile = (type, format) => {
 }
 :deep(.p-togglebutton) {
     font-size: 0.8rem !important;
+}
+:deep(.popover-btn) {
+    justify-content: flex-start !important;
+    justify-items: flex-start !important;
+    text-align: left !important;
+    padding-left: 1rem !important;
 }
 </style>
 

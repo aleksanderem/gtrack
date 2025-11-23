@@ -30,7 +30,7 @@
       <div class="p-6 max-w-7xl mx-auto">
         
         <!-- Common Header for all tabs or just specific ones -->
-        <div class="mb-8">
+        <div class="mb-4">
            <h1 class="text-2xl font-bold text-gray-900">Opinie Klientów</h1>
            <p class="text-gray-500">Zarządzaj reputacją swojej firmy w jednym miejscu.</p>
         </div>

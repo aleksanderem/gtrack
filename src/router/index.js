@@ -1,12 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { h } from 'vue';
 import DashboardLayout from '../layouts/DashboardLayout.vue';
 import LocationMapView from '../views/LocationMapView.vue';
 import LocationSettingsView from '../views/LocationSettingsView.vue';
 import ReviewsDashboard from '../components/gtrack/reviews/ReviewsDashboard.vue';
 
 // Reviews sub-components
-import ReviewsStats from '../components/gtrack/reviews/ReviewsStats.vue';
-import ReviewsList from '../components/gtrack/reviews/ReviewsList.vue';
+import ReviewsOverview from '../components/gtrack/reviews/ReviewsOverview.vue';
 import AcquisitionPanel from '../components/gtrack/reviews/AcquisitionPanel.vue';
 import InterceptedReviews from '../components/gtrack/reviews/InterceptedReviews.vue';
 import ResponseTemplates from '../components/gtrack/reviews/ResponseTemplates.vue';
@@ -41,12 +41,8 @@ const routes = [
             {
                 path: 'overview',
                 name: 'reviews-overview',
-                component: {
-                    // Wrapper to show stats + list, as per original dashboard
-                    template: `<div><ReviewsStats v-if="stats" :stats="stats" /><ReviewsList /></div>`,
-                    components: { ReviewsStats, ReviewsList },
-                    props: ['stats'] 
-                }
+                component: ReviewsOverview,
+                props: true 
             },
             {
                 path: 'acquisition',
@@ -71,26 +67,26 @@ const routes = [
         component: LocationSettingsView,
         meta: { label: 'Ustawienia' }
       },
-      // Placeholder for other tabs
+      // Placeholders using render functions to avoid runtime compiler dependency
       {
         path: 'posts',
         name: 'posts',
-        component: { template: '<div class="p-6">Widok Posty (w przygotowaniu)</div>' }
+        component: { render: () => h('div', { class: 'p-6' }, 'Widok Posty (w przygotowaniu)') }
       },
       {
         path: 'content',
         name: 'content',
-        component: { template: '<div class="p-6">Widok Wizytówka (w przygotowaniu)</div>' }
+        component: { render: () => h('div', { class: 'p-6' }, 'Widok Wizytówka (w przygotowaniu)') }
       },
       {
         path: 'keywords',
         name: 'keywords-report',
-        component: { template: '<div class="p-6">Raport Pozycje (w przygotowaniu)</div>' }
+        component: { render: () => h('div', { class: 'p-6' }, 'Raport Pozycje (w przygotowaniu)') }
       },
       {
         path: 'comparison',
         name: 'comparison',
-        component: { template: '<div class="p-6">Raport Konkurencja (w przygotowaniu)</div>' }
+        component: { render: () => h('div', { class: 'p-6' }, 'Raport Konkurencja (w przygotowaniu)') }
       }
     ]
   }
@@ -102,5 +98,3 @@ const router = createRouter({
 });
 
 export default router;
-
-
