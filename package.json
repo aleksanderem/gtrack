@@ -1,0 +1,32 @@
+{
+  "name": "gtrack-location-detail",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@primeuix/themes": "^1.2.5",
+    "@vueuse/core": "^14.0.0",
+    "@vueuse/integrations": "^14.0.0",
+    "leaflet": "^1.9.4",
+    "leaflet.markercluster": "^1.5.3",
+    "primeflex": "^4.0.0",
+    "primeicons": "^6.0.1",
+    "primevue": "^4.0.7",
+    "prismjs": "^1.30.0",
+    "qrcode": "^1.5.4",
+    "vue": "^3.4.21"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.16",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "autoprefixer": "^10.4.21",
+    "playwright": "^1.56.1",
+    "tailwindcss": "^4.0.0",
+    "tailwindcss-primeui": "^0.6.1",
+    "vite": "^5.1.6"
+  }
+}

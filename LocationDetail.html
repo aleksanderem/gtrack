@@ -1,0 +1,2692 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Detail - GTRACK</title>
+
+    <!-- PrimeVue V4 JavaScript + V3 CSS (hybrid for component styling) -->
+    <link rel="stylesheet" href="https://unpkg.com/primevue@3.50.0/resources/themes/lara-light-blue/theme.css">
+    <link rel="stylesheet" href="https://unpkg.com/primevue@3.50.0/resources/primevue.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/primeicons@6.0.1/primeicons.css">
+    <link rel="stylesheet" href="https://unpkg.com/primeflex@3.3.1/primeflex.css">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+
+    <!-- Leaflet.markercluster CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--surface-ground);
+        }
+
+        /* Custom Scrollbar - pojawia się tylko podczas scrollowania */
+        .business-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .business-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .business-panel::-webkit-scrollbar-thumb {
+            background: transparent;
+            border-radius: 10px;
+            transition: background 0.3s;
+        }
+
+        .business-panel:hover::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+        }
+
+        .business-panel::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Firefox scrollbar */
+        .business-panel {
+            scrollbar-width: thin;
+            scrollbar-color: transparent transparent;
+        }
+
+        .business-panel:hover {
+            scrollbar-color: #cbd5e1 transparent;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+            border-radius: 6px;
+        }
+
+        /* Custom marker styles - two-layer design */
+        .outer-circle {
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .inner-circle {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .outer-circle:hover .inner-circle {
+            transform: scale(1.15);
+            /* Shadow and border colors will be set via CSS variables per marker */
+            box-shadow: 0 4px 16px var(--shadow-color, rgba(0,0,0,0.35));
+            border: 1px solid var(--text-color, #000);
+        }
+
+        /* Selected marker style */
+        .outer-circle.selected {
+            z-index: 10000 !important;
+        }
+
+        .outer-circle.selected .inner-circle {
+            transform: scale(1.15);
+            box-shadow: 0 4px 16px var(--shadow-color, rgba(0,0,0,0.35));
+            border: 2px solid white;
+        }
+
+        /* Ripple wave element (hidden by default) */
+        .ripple-wave {
+            display: none;
+        }
+
+        /* Allow ripple to overflow outer-circle */
+        .outer-circle {
+            overflow: visible !important;
+        }
+
+        /* Ripple animation for selected marker - 3 waves with staggered delays */
+        .outer-circle.selected::before,
+        .outer-circle.selected::after,
+        .outer-circle.selected .ripple-wave {
+            content: '';
+            display: block;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            border: 6px solid var(--text-color, rgba(0,0,0,0.8));
+            background: transparent;
+            transform: translate(-50%, -50%);
+            animation: growAndFade 10s ease-in-out infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .outer-circle.selected::before {
+            animation-delay: 0s;
+        }
+
+        .outer-circle.selected::after {
+            animation-delay: 3.33s;
+        }
+
+        .outer-circle.selected .ripple-wave {
+            animation-delay: 6.66s;
+        }
+
+        /* Ensure inner circle is above ripples */
+        .inner-circle {
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes growAndFade {
+            0% {
+                opacity: 0.5;
+                width: 0;
+                height: 0;
+            }
+            100% {
+                opacity: 0;
+                width: 180px;
+                height: 180px;
+            }
+        }
+
+        .date-carousel {
+            display: flex;
+            gap: 0.5rem;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .date-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        .date-item:hover {
+            background: var(--surface-100);
+        }
+
+        .date-item.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .keyword-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            background: var(--primary-50);
+            color: var(--primary-700);
+            border-radius: 16px;
+            margin: 0.25rem;
+            font-size: 0.875rem;
+        }
+
+        .keyword-tag .remove {
+            margin-left: 0.5rem;
+            cursor: pointer;
+            opacity: 0.7;
+        }
+
+        .keyword-tag .remove:hover {
+            opacity: 1;
+        }
+
+        .info-field {
+            margin-bottom: 1rem;
+        }
+
+        .info-field label {
+            display: block;
+            color: var(--text-color-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .info-field .value {
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        .edit-mode .info-field input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--surface-border);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .edit-mode .info-field input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        /* Left Navigation Sidebar Styles */
+        .nav-sidebar {
+            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
+            width: 70px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .nav-sidebar .logo {
+            color: white;
+            font-size: 1.25rem;
+            font-weight: bold;
+            padding: 1.5rem 0;
+            text-align: center;
+        }
+
+        .nav-sidebar .nav-items {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 1rem 0;
+            width: 100%;
+        }
+
+        .nav-sidebar .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 0;
+            cursor: pointer;
+            transition: background 0.2s;
+            position: relative;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .nav-sidebar .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-sidebar .nav-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .nav-sidebar .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: white;
+        }
+
+        .nav-sidebar .nav-item i {
+            font-size: 1.25rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-sidebar .nav-item span {
+            font-size: 0.625rem;
+            text-align: center;
+            line-height: 1;
+        }
+
+        .nav-sidebar .credits-section {
+            padding: 1rem 0.5rem;
+            width: 100%;
+        }
+
+        .nav-sidebar .credit-item {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .nav-sidebar .credit-item .label {
+            font-size: 0.625rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-sidebar .credit-item .value {
+            font-size: 0.875rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .nav-sidebar .credit-item .total {
+            font-size: 0.625rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .nav-sidebar .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0.75rem 0;
+            cursor: pointer;
+            font-weight: bold;
+            color: #1e3a8a;
+        }
+
+        /* Tab Navigation Styles - Pill Style */
+        .tabs-container {
+            background: var(--surface-0);
+            border: 1px solid var(--surface-border);
+            border-radius: 1rem;
+            padding: 0.5rem;
+            display: inline-flex;
+            gap: 0.25rem;
+        }
+
+        .tab-pill {
+            cursor: pointer;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+            color: var(--text-color-secondary);
+            white-space: nowrap;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .tab-pill:hover {
+            background: var(--surface-50);
+            color: var(--text-color);
+        }
+
+        .tab-pill.active {
+            background: var(--surface-100);
+            color: var(--text-color);
+        }
+
+        .tab-pill i {
+            font-size: 1rem;
+        }
+
+        /* Keyword Selector styled as tab pill */
+        .tab-pill-select {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-radius: 0.5rem;
+            color: var(--text-color);
+            white-space: nowrap;
+        }
+
+        .tab-pill-select i {
+            font-size: 1rem;
+            color: var(--text-color-secondary);
+        }
+
+        .select-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        /* Custom Select */
+        .custom-select {
+            position: relative;
+            background: var(--surface-100);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            min-width: 200px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.2s;
+        }
+
+        .custom-select:hover {
+            background: var(--surface-200);
+        }
+
+        .custom-select.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .select-value {
+            flex: 1;
+            font-size: 0.875rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dropdown-arrow {
+            font-size: 0.75rem;
+            color: var(--text-color-secondary);
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+
+        .select-panel {
+            position: absolute;
+            top: calc(100% + 0.25rem);
+            left: 0;
+            right: 0;
+            background: var(--surface-0);
+            border: 1px solid var(--surface-border);
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .select-item {
+            padding: 0.625rem 0.75rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: background 0.2s;
+        }
+
+        .select-item:hover {
+            background: var(--surface-50);
+        }
+
+        .select-item.selected {
+            background: var(--surface-100);
+            font-weight: 500;
+        }
+
+        /* Sidebar Info/Settings Pills */
+        .sidebar-pills {
+            background: var(--surface-0);
+            border: 1px solid var(--surface-border);
+            border-radius: 1rem;
+            padding: 0.25rem;
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .sidebar-pill {
+            flex: 1;
+            cursor: pointer;
+            padding: 0.625rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.75rem;
+            transition: all 0.2s;
+            color: var(--text-color-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: none;
+            background: transparent;
+        }
+
+        .sidebar-pill:hover {
+            background: var(--surface-50);
+            color: var(--text-color);
+        }
+
+        .sidebar-pill.active {
+            background: var(--primary-color);
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* (Removed unused action-buttons styles) */
+
+        /* Loading Overlay (for report switching) */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.2s ease-in;
+        }
+
+        .loading-content {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Generate Report Dropdown Menu */
+        .generate-menu {
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            right: 0;
+            background: var(--surface-0);
+            border: 1px solid var(--surface-border);
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            min-width: 160px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .generate-menu-item {
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .generate-menu-item:hover {
+            background: var(--surface-50);
+        }
+
+        .generate-menu-item i {
+            font-size: 1rem;
+            color: var(--text-color-secondary);
+        }
+
+        /* Business Listings Panel */
+        .business-panel {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow-y: auto;
+            width: 450px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .business-panel {
+                width: calc(100% - 2rem);
+                max-width: none;
+                min-width: auto;
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .business-item {
+            padding: 1.75rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            transition: all 0.2s ease;
+        }
+
+        .business-item:hover {
+            background: var(--surface-50);
+            cursor: pointer;
+        }
+
+        .business-item:last-child {
+            border-bottom: none;
+        }
+
+        .business-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: white;
+            flex-shrink: 0;
+            box-shadow: 0 2px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Business Photo (from Google Business Profile) */
+        .business-photo {
+            width: 56px;
+            height: 56px;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            flex-shrink: 0;
+            background: var(--surface-100);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .business-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .photo-fallback {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        /* User Business Card */
+        .user-business-card {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin: 1rem 1.5rem;
+        }
+
+        .user-position-badge {
+            /* Background color is dynamic based on ranking - set via :style */
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .visibility-metrics {
+            margin: 0.75rem 0;
+        }
+
+        .metric-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .metric-bar {
+            flex: 1;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .metric-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .metric-label {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #ef4444;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .difficulty-badge {
+            display: inline-block;
+            background: #f59e0b;
+            color: white;
+            padding: 0.375rem 0.875rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-top: 0.5rem;
+        }
+
+        .view-google-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 0.625rem;
+            background: white;
+            border: 1px solid var(--surface-border);
+            border-radius: 8px;
+            color: #3b82f6;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .view-google-link:hover {
+            background: #eff6ff;
+            border-color: #3b82f6;
+        }
+
+        .competitors-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--surface-border);
+            background: var(--surface-50);
+        }
+
+        .business-ranking {
+            color: white;
+            min-width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        /* Position Badge - kolor dynamiczny według pozycji (jak markery na mapie) */
+        .position-badge {
+            color: white;
+            padding: 0.25rem 0.625rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        .business-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .business-rating i {
+            color: #22c55e;
+            font-size: 0.875rem;
+        }
+
+        .business-description {
+            color: var(--text-color-secondary);
+            font-size: 0.875rem;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .close-panel-btn {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        .close-panel-btn h3 {
+            font-size: 0.9375rem;
+            line-height: 1.4;
+            font-weight: 600;
+        }
+
+        .close-panel-btn p {
+            color: var(--text-color-secondary);
+            font-size: 0.75rem;
+            line-height: 1.3;
+        }
+
+        .business-panel-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+        /* Custom Marker Cluster Styles */
+        .marker-cluster {
+            background-clip: padding-box;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .marker-cluster-small {
+            background-color: rgba(181, 226, 140, 0.6);
+            border: 4px solid rgba(110, 204, 57, 0.8);
+        }
+
+        .marker-cluster-medium {
+            background-color: rgba(241, 211, 87, 0.6);
+            border: 4px solid rgba(240, 194, 12, 0.8);
+        }
+
+        .marker-cluster-large {
+            background-color: rgba(253, 156, 115, 0.6);
+            border: 4px solid rgba(241, 128, 23, 0.8);
+        }
+
+        .marker-cluster div {
+            width: 50px;
+            height: 50px;
+            margin-left: 5px;
+            margin-top: 5px;
+            text-align: center;
+            border-radius: 50%;
+            font: 14px "Helvetica Neue", Arial, Helvetica, sans-serif;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: white;
+        }
+
+        .marker-cluster span.cluster-count {
+            font-size: 16px;
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+
+        .marker-cluster span.cluster-avg {
+            font-size: 11px;
+            line-height: 1;
+            opacity: 0.9;
+        }
+
+        /* Settings Panel Styles */
+        .grid-size-btn {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .grid-size-btn i {
+            font-size: 1.5rem;
+            color: #6b7280;
+        }
+
+        .grid-size-btn span {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .grid-size-btn:hover {
+            border-color: var(--primary-color);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .grid-size-btn.active {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .grid-size-btn.active i,
+        .grid-size-btn.active span {
+            color: white;
+        }
+
+        /* Step Size Slider */
+        .step-slider-container {
+            position: relative;
+            padding: 0 0.5rem;
+        }
+
+        .step-slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e5e7eb;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .step-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .step-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .step-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.75rem;
+            padding: 0 0.5rem;
+        }
+
+        .step-labels span {
+            font-size: 0.875rem;
+            color: #6b7280;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .step-labels span.active {
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        /* PrimeVue Button Styles (if not already defined) */
+        .p-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Settings Header Buttons */
+        .settings-header-btn {
+            font-size: 14px;
+        }
+
+        .p-button:hover {
+            background: rgba(59, 130, 246, 0.9);
+        }
+
+        .p-button-outlined {
+            background: transparent;
+            border: 2px solid #e5e7eb;
+            color: #374151;
+        }
+
+        .p-button-outlined:hover {
+            background: #f9fafb;
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .p-button-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Input Group Styles */
+        .p-inputgroup {
+            display: flex;
+            align-items: stretch;
+        }
+
+        .p-inputgroup-addon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1rem;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-right: none;
+            border-radius: 0.375rem 0 0 0.375rem;
+            color: #6b7280;
+        }
+
+        .p-inputtext {
+            padding: 0.75rem 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0;
+            outline: none;
+            flex: 1;
+        }
+
+        .p-inputtext:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .p-inputgroup .p-button {
+            border-radius: 0 0.375rem 0.375rem 0;
+            margin: 0;
+        }
+
+        /* Toggle Switch Styles */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider-switch {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #e5e7eb;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .slider-switch:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        input:checked + .slider-switch {
+            background-color: var(--primary-color);
+        }
+
+        input:checked + .slider-switch:before {
+            transform: translateX(24px);
+        }
+
+        /* Frequency Button Styles */
+        .frequency-btn {
+            padding: 1.5rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            min-height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .frequency-btn:hover {
+            border-color: var(--primary-color);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .frequency-btn.active {
+            border-color: var(--primary-color);
+            background: rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .frequency-btn .pi {
+            color: #6b7280;
+            transition: color 0.2s ease;
+        }
+
+        .frequency-btn:hover .pi,
+        .frequency-btn.active .pi {
+            color: var(--primary-color);
+        }
+
+        /* Grid utility classes */
+        .grid-cols-12 {
+            display: grid;
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+        }
+
+        .col-span-12 {
+            grid-column: span 12 / span 12;
+        }
+
+        @media (min-width: 1024px) {
+            .lg\:col-span-3 {
+                grid-column: span 3 / span 3;
+            }
+
+            .lg\:col-span-9 {
+                grid-column: span 9 / span 9;
+            }
+        }
+
+        /* Side navigation active state */
+        .-ml-1px {
+            margin-left: -1px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Main Layout with Narrow Sidebar -->
+        <div class="h-screen flex relative lg:static surface-ground overflow-hidden">
+            <!-- Far Left Navigation Sidebar -->
+            <div class="nav-sidebar flex-shrink-0">
+                <!-- Logo -->
+                <div class="logo">
+                    <i class="pi pi-chart-line"></i>
+                    <div style="font-size: 0.75rem; margin-top: 0.25rem;">GTRACK</div>
+                </div>
+
+                <!-- Navigation Items -->
+                <div class="nav-items">
+                    <div class="nav-item" title="Home">
+                        <i class="pi pi-home"></i>
+                    </div>
+                    <div class="nav-item" title="New Scan">
+                        <i class="pi pi-plus-circle"></i>
+                    </div>
+                    <div class="nav-item" title="My Scans">
+                        <i class="pi pi-list"></i>
+                    </div>
+                    <div class="nav-item" title="AI Scan Insights">
+                        <i class="pi pi-chart-line"></i>
+                    </div>
+                    <div class="nav-item active" title="Scheduled Scans">
+                        <i class="pi pi-calendar"></i>
+                    </div>
+                    <div class="nav-item" title="Track Competitors">
+                        <i class="pi pi-users"></i>
+                    </div>
+                </div>
+
+                <!-- Credits Section -->
+                <div class="credits-section">
+                    <div class="credit-item">
+                        <div class="label">Q Scan Credits</div>
+                        <div class="value">{{ scanCredits.used }}</div>
+                        <div class="total">{{ scanCredits.total }} total</div>
+                    </div>
+                    <div class="credit-item">
+                        <div class="label">AI Tokens</div>
+                        <div class="value">{{ aiTokens.used }}</div>
+                        <div class="total">{{ aiTokens.total }} total</div>
+                    </div>
+                </div>
+
+                <!-- User Avatar -->
+                <div class="user-avatar" title="User Profile">
+                    AC
+                </div>
+            </div>
+
+            <!-- Left Sidebar Panel -->
+            <div class="surface-section flex-shrink-0 border-right-1 surface-border overflow-y-auto h-screen" style="width: 320px;">
+                <div class="p-4">
+                    <!-- Back Button -->
+                    <div class="mb-4">
+                        <a href="#" class="flex align-items-center text-600 hover:text-900 no-underline">
+                            <i class="pi pi-arrow-left mr-2"></i>
+                            <span>Back to Schedules</span>
+                        </a>
+                    </div>
+
+                    <!-- Location Header -->
+                    <div class="mb-4">
+                        <h2 class="text-2xl font-bold text-900 mb-2" v-if="!editMode">{{ location.name }}</h2>
+                        <input v-else v-model="location.name" type="text" class="w-full p-2 border-1 surface-border border-round text-2xl font-bold">
+
+                        <div class="sidebar-pills mt-3">
+                            <button @click="sidebarView = 'info'; if (editMode && sidebarView === 'info') toggleEditMode()"
+                                    class="sidebar-pill"
+                                    :class="{ 'active': sidebarView === 'info' }">
+                                Informacje
+                            </button>
+                            <button @click="sidebarView = 'settings'"
+                                    class="sidebar-pill"
+                                    :class="{ 'active': sidebarView === 'settings' }">
+                                Ustawienia
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Info Section -->
+                    <div class="mb-4 pb-4 border-bottom-1 surface-border" :class="{ 'edit-mode': editMode }">
+                        <h3 class="text-lg font-semibold text-900 mb-3">Informacje</h3>
+
+                        <div class="info-field">
+                            <label>Adres</label>
+                            <div v-if="!editMode" class="value">{{ location.address }}</div>
+                            <input v-else v-model="location.address" type="text">
+                        </div>
+
+                        <div class="info-field">
+                            <label>Miasto</label>
+                            <div v-if="!editMode" class="value">{{ location.city }}</div>
+                            <input v-else v-model="location.city" type="text">
+                        </div>
+
+                        <div class="info-field">
+                            <label>Kod pocztowy</label>
+                            <div v-if="!editMode" class="value">{{ location.postal }}</div>
+                            <input v-else v-model="location.postal" type="text">
+                        </div>
+
+                        <div class="info-field">
+                            <label>Telefon</label>
+                            <div v-if="!editMode" class="value">{{ location.phone }}</div>
+                            <input v-else v-model="location.phone" type="text">
+                        </div>
+
+                        <div class="info-field">
+                            <label>Status</label>
+                            <div v-if="!editMode">
+                                <span class="p-tag p-tag-success">{{ location.status }}</span>
+                            </div>
+                            <select v-else v-model="location.status" class="w-full p-2 border-1 surface-border border-round">
+                                <option>Active</option>
+                                <option>Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Keywords Section -->
+                    <div class="mb-4">
+                        <h3 class="text-lg font-semibold text-900 mb-3">Słowa kluczowe</h3>
+
+                        <div class="mb-3">
+                            <input
+                                v-model="newKeyword"
+                                @keyup.enter="addKeyword"
+                                type="text"
+                                placeholder="Dodaj słowo kluczowe..."
+                                class="w-full p-2 border-1 surface-border border-round"
+                            >
+                            <small class="text-500">Naciśnij Enter aby dodać</small>
+                        </div>
+
+                        <div class="flex flex-wrap">
+                            <span v-for="(keyword, index) in keywords" :key="index" class="keyword-tag">
+                                {{ keyword }}
+                                <i @click="removeKeyword(index)" class="pi pi-times remove"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="flex-1 flex flex-column">
+                <!-- Tab Navigation -->
+                <div class="surface-section px-4 py-3">
+                    <div class="flex align-items-center justify-content-between gap-3">
+                        <div class="flex align-items-center gap-3">
+                        <!-- Keyword Selector (styled as tab) -->
+                        <div class="tabs-container">
+                            <div class="tab-pill-select">
+                                <i class="pi pi-map-marker"></i>
+                                <span class="select-label">Wybierz</span>
+                                <div class="custom-select"
+                                     @click="!isLoadingReportData && toggleReportDropdown()"
+                                     :class="{ 'disabled': isLoadingReportData }">
+                                    <span class="select-value">
+                                        {{ selectedReport ? selectedReport.name : 'Wybierz' }}
+                                    </span>
+                                    <i v-if="!isLoadingReportData" class="pi pi-chevron-down dropdown-arrow"></i>
+                                    <i v-else class="pi pi-spin pi-spinner dropdown-arrow"></i>
+
+                                    <!-- Dropdown panel -->
+                                    <div v-if="showReportDropdown" class="select-panel" @click.stop>
+                                        <div
+                                            v-for="option in reportOptions"
+                                            :key="option.code"
+                                            class="select-item"
+                                            :class="{ 'selected': selectedReport && selectedReport.code === option.code }"
+                                            @click="selectReport(option)"
+                                        >
+                                            {{ option.name }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- View Tabs -->
+                        <div class="tabs-container">
+                            <div
+                                v-for="tab in tabs"
+                                :key="tab.id"
+                                @click="activeTab = tab.id"
+                                class="tab-pill"
+                                :class="{ 'active': activeTab === tab.id }"
+                            >
+                                <i :class="tab.icon"></i>
+                                <span>{{ tab.label }}</span>
+                            </div>
+                        </div>
+                        </div>
+
+                        <!-- Generate Report Dropdown Button (aligned right) -->
+                        <div class="tabs-container">
+                            <div class="tab-pill" @click="toggleGenerateMenu" style="cursor: pointer; position: relative;">
+                                <i class="pi pi-file"></i>
+                                <span>Generuj</span>
+                                <i class="pi pi-chevron-down" style="font-size: 0.75rem; margin-left: 0.25rem;"></i>
+
+                                <!-- Dropdown Menu -->
+                                <div v-if="showGenerateMenu" class="generate-menu" @click.stop>
+                                    <div class="generate-menu-item" @click="generatePDF">
+                                        <i class="pi pi-file-pdf"></i>
+                                        <span>Raport PDF</span>
+                                    </div>
+                                    <div class="generate-menu-item" @click="generateCSV">
+                                        <i class="pi pi-file-excel"></i>
+                                        <span>Raport CSV</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Bar with Date Selector -->
+                <div class="surface-section border-bottom-1 surface-border p-3">
+                    <div class="flex align-items-center gap-3">
+
+                        <!-- Date Carousel -->
+                        <div class="flex-1 flex align-items-center gap-2">
+                            <button @click="scrollDates(-1)" class="p-button p-button-icon-only p-button-rounded p-button-text">
+                                <i class="pi pi-chevron-left"></i>
+                            </button>
+
+                            <div ref="dateCarousel" class="date-carousel flex-1">
+                                <div
+                                    v-for="(date, index) in visibleDates"
+                                    :key="date.index"
+                                    @click="selectDate(date.index)"
+                                    class="date-item"
+                                    :class="{ active: selectedDateIndex === date.index }"
+                                >
+                                    <div class="text-xs font-medium" style="opacity: 0.8;">{{ date.month }}</div>
+                                    <div class="text-2xl font-bold">{{ date.day }}</div>
+                                    <div class="text-xs" style="opacity: 0.8;">{{ date.weekday }}</div>
+                                </div>
+                            </div>
+
+                            <button @click="scrollDates(1)" class="p-button p-button-icon-only p-button-rounded p-button-text">
+                                <i class="pi pi-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Content Area (right side) - zajmuje pozostałą przestrzeń -->
+                <div class="flex-1 flex flex-column overflow-hidden" style="position: relative;">
+                    <!-- Loading Overlay (when switching reports) -->
+                    <div v-if="isLoadingReportData" class="loading-overlay">
+                        <div class="loading-content">
+                            <i class="pi pi-spin pi-spinner" style="font-size: 2rem; color: var(--primary-color);"></i>
+                            <p class="text-lg font-medium mt-3 mb-0">Ładowanie danych raportu...</p>
+                            <p class="text-sm text-600 mt-2 mb-0">{{ selectedReport ? selectedReport.name : '' }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Map Container - flex row z panelem i mapą obok siebie -->
+                    <div v-if="activeTab === 'map'" class="p-4 flex gap-3 flex-1 overflow-hidden">
+                    <!-- Business Listings Panel (lewa strona, stała szerokość) -->
+                    <div class="business-panel">
+                        <div class="close-panel-btn">
+                            <div class="flex-1">
+                                <h3 class="text-sm font-semibold text-900 m-0 mb-1">Twoja widoczność</h3>
+                                <p class="text-xs font-semibold text-900 m-0">Słowa kluczowe ({{ keywords.length }})</p>
+                            </div>
+                            <i class="pi pi-eye text-500" style="font-size: 1.25rem;"></i>
+                        </div>
+
+                        <div class="business-panel-content">
+                            <!-- User's Business Card (Your Position) -->
+                            <div class="user-business-card">
+                                <div class="flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <div class="flex align-items-center gap-2 mb-2">
+                                            <span class="user-position-badge" :style="{ background: getRankingBadgeColor(selectedRanking) }">Poz. {{ selectedRanking }}</span>
+                                            <h4 class="text-base font-bold text-900 m-0">Twoja Firma</h4>
+                                        </div>
+                                        <p class="text-sm text-600 m-0">Widoczność firmy <i class="pi pi-info-circle"></i></p>
+                                    </div>
+                                </div>
+
+                                <div class="visibility-metrics">
+                                    <div class="metric-item">
+                                        <div class="metric-bar">
+                                            <div class="metric-fill" style="width: 6%; background: #ef4444;"></div>
+                                        </div>
+                                        <span class="metric-label">6%</span>
+                                    </div>
+                                </div>
+
+                                <div class="text-sm text-600 mt-2">
+                                    Trudność obszaru <i class="pi pi-info-circle"></i>
+                                </div>
+                                <div class="difficulty-badge">ŚREDNIA</div>
+
+                                <a href="#" class="view-google-link">
+                                    <span>Otwórz w Google</span>
+                                    <i class="pi pi-external-link"></i>
+                                </a>
+                            </div>
+
+                            <!-- Competitors Section Header -->
+                            <div class="competitors-header">
+                                <h5 class="text-sm font-semibold text-600 m-0">
+                                    Konkurenci ({{ businessListings.length }})
+                                    <i class="pi pi-eye ml-2"></i>
+                                </h5>
+                            </div>
+
+                            <!-- Loading Skeleton (shown while fetching data) -->
+                            <!-- TODO: This will be shown while actual API call is fetching competitor data -->
+                            <div v-if="isLoadingBusinessData" class="p-3">
+                                <div v-for="n in 4" :key="`skeleton-${n}`" class="mb-4">
+                                    <div class="flex gap-3">
+                                        <!-- Prostokątny skeleton dla zdjęcia (120x120px jak business-photo) -->
+                                        <div class="flex flex-column align-items-center gap-2 flex-shrink-0">
+                                            <p-skeleton width="120px" height="120px" borderRadius="8px"></p-skeleton>
+                                            <p-skeleton width="60px" height="24px" borderRadius="4px"></p-skeleton>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p-skeleton width="100%" height="1.5rem" class="mb-2"></p-skeleton>
+                                            <p-skeleton width="75%" height="1rem" class="mb-3"></p-skeleton>
+                                            <p-skeleton width="100%" height="3rem" class="mb-2"></p-skeleton>
+                                            <p-skeleton width="60%" height="0.875rem"></p-skeleton>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Competitor Listings (shown when data is loaded) -->
+                            <div v-if="!isLoadingBusinessData" v-for="(business, index) in businessListings" :key="index" class="business-item">
+                                <div class="flex gap-3">
+                                    <!-- Photo and Position Badge Column -->
+                                    <div class="flex flex-column align-items-center gap-2 flex-shrink-0">
+                                        <!--
+                                            Business Photo - UWAGA: Tutaj trzeba pobrać pierwsze zdjęcie z wizytówki konkurenta
+                                            Obecnie używamy placeholdera, ale w produkcji należy:
+                                            1. Pobrać zdjęcia z Google Business Profile API
+                                            2. Wybrać pierwsze zdjęcie z galerii wizytówki
+                                            3. Jeśli brak zdjęć, pokazać avatar z inicjałami
+                                        -->
+                                        <div class="business-photo">
+                                            <img
+                                                :src="business.photoUrl || `https://picsum.photos/seed/${business.name}/120/120`"
+                                                :alt="business.name"
+                                                @error="$event.target.style.display='none'; $event.target.nextElementSibling.style.display='flex'"
+                                            />
+                                            <!-- Fallback avatar gdy brak zdjęcia -->
+                                            <div class="photo-fallback">
+                                                {{ business.initials }}
+                                            </div>
+                                        </div>
+
+                                        <!-- Position Badge (kolor dynamiczny według pozycji, jak markery na mapie) -->
+                                        <div class="position-badge" :style="{
+                                            background: getRankingBadgeColor(business.position),
+                                            boxShadow: `0 1px 4px ${getRankingBadgeColor(business.position)}40`
+                                        }">
+                                            Poz. {{ business.position > 20 ? '20+' : business.position }}
+                                        </div>
+                                    </div>
+
+                                    <!-- Business Details -->
+                                    <div class="flex-1">
+                                        <div class="mb-2">
+                                            <h4 class="text-base font-bold text-900 m-0 mb-2">{{ business.name }}</h4>
+                                            <div class="business-rating mb-2">
+                                                <i v-for="n in Math.floor(business.rating)" :key="n" class="pi pi-star-fill"></i>
+                                                <i v-if="business.rating % 1 !== 0" class="pi pi-star-half-fill"></i>
+                                                <span class="text-sm font-semibold text-900 ml-1">{{ business.rating.toFixed(1) }}</span>
+                                                <span class="text-sm text-500 ml-1">({{ business.reviewCount }})</span>
+                                            </div>
+                                        </div>
+
+                                        <p class="business-description mb-2">{{ business.description }}</p>
+
+                                        <div class="flex flex-column gap-2 text-sm text-600">
+                                            <div class="flex align-items-center gap-1">
+                                                <i class="pi pi-map-marker"></i>
+                                                <span>{{ business.address }}</span>
+                                            </div>
+                                            <div v-if="business.phone" class="flex align-items-center gap-1">
+                                                <i class="pi pi-phone"></i>
+                                                <span>{{ business.phone }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Map (prawa strona, zajmuje resztę przestrzeni) -->
+                    <div class="surface-card border-round p-3 flex-1" style="height: 100%; border: 1px solid #e5e7eb;">
+                        <div id="map"></div>
+                    </div>
+                    </div> <!-- Koniec Map Container -->
+
+                    <!-- Settings Container -->
+                    <div v-if="sidebarView === 'settings'" class="flex-1 overflow-auto">
+                        <!-- Professional Settings Header -->
+                        <div class="bg-surface-0" style="border-bottom: 1px solid #e5e7eb;">
+                            <div class="mx-auto" style="max-width: 1200px; padding: 1.5rem 2rem;">
+                                <div class="flex align-items-center justify-content-between">
+                                    <!-- Left: Title and Current Settings Info -->
+                                    <div>
+                                        <h1 class="text-900 font-semibold m-0 mb-2" style="font-size: 1.5rem;">Ustawienia</h1>
+                                        <div class="flex align-items-center text-600" style="gap: 1rem; font-size: 0.875rem;">
+                                            <span class="flex align-items-center" style="gap: 0.375rem;">
+                                                <i class="pi pi-th-large" style="font-size: 0.875rem;"></i>
+                                                Siatka: {{ gridConfig.currentSize }}x{{ gridConfig.currentSize }}
+                                            </span>
+                                            <span class="flex align-items-center" style="gap: 0.375rem;">
+                                                <i class="pi pi-arrows-h" style="font-size: 0.875rem;"></i>
+                                                Odstęp: {{ gridConfig.stepKm * 1000 }}m
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Right: Action Buttons -->
+                                    <div class="flex align-items-center" style="gap: 0.5rem;">
+                                        <button class="p-button p-button-outlined settings-header-btn" @click="activeTab = 'map'">
+                                            Anuluj
+                                        </button>
+                                        <button class="p-button settings-header-btn" @click="saveSettings">
+                                            <i class="pi pi-check" style="margin-right: 0.5rem;"></i>
+                                            Zapisz ustawienia
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Settings Content with Max Width -->
+                        <div class="mx-auto" style="max-width: 1200px; padding: 2rem 2rem;">
+                            <!-- Settings Layout Grid -->
+                            <div class="grid grid-cols-12 gap-4">
+                                <!-- Side Navigation -->
+                                <div class="col-span-12 lg:col-span-3" style="border-left: 1px solid #e9e9e9;">
+                                    <ul class="list-none p-0 flex flex-column justify-start" style="margin: 40px 0 0 0;">
+                                        <li class="border-left-2"
+                                            :class="settingsTab === 'scanning' ? 'border-primary -ml-1px' : '-ml-1px'"
+                                            :style="settingsTab !== 'scanning' ? 'border-color: transparent;' : ''">
+                                            <a @click="settingsTab = 'scanning'"
+                                               class="flex align-items-center cursor-pointer py-3 px-3 text-sm transition-colors"
+                                               :class="settingsTab === 'scanning' ? 'text-primary font-medium' : 'text-700 hover:text-primary'">
+                                                <i class="pi pi-th-large mr-2" style="font-size: 0.875rem;"></i>
+                                                <span>Ustawienia Skanowania</span>
+                                            </a>
+                                        </li>
+                                        <li class="border-left-2"
+                                            :class="settingsTab === 'frequency' ? 'border-primary -ml-1px' : '-ml-1px'"
+                                            :style="settingsTab !== 'frequency' ? 'border-color: transparent;' : ''">
+                                            <a @click="settingsTab = 'frequency'"
+                                               class="flex align-items-center cursor-pointer py-3 px-3 text-sm transition-colors"
+                                               :class="settingsTab === 'frequency' ? 'text-primary font-medium' : 'text-700 hover:text-primary'">
+                                                <i class="pi pi-clock mr-2" style="font-size: 0.875rem;"></i>
+                                                <span>Częstotliwość</span>
+                                            </a>
+                                        </li>
+                                        <li class="border-left-2"
+                                            :class="settingsTab === 'notifications' ? 'border-primary -ml-1px' : '-ml-1px'"
+                                            :style="settingsTab !== 'notifications' ? 'border-color: transparent;' : ''">
+                                            <a @click="settingsTab = 'notifications'"
+                                               class="flex align-items-center cursor-pointer py-3 px-3 text-sm transition-colors"
+                                               :class="settingsTab === 'notifications' ? 'text-primary font-medium' : 'text-700 hover:text-primary'">
+                                                <i class="pi pi-bell mr-2" style="font-size: 0.875rem;"></i>
+                                                <span>Powiadomienia</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <!-- Settings Content Panel -->
+                                <div class="col-span-12 lg:col-span-9">
+                                    <div class="surface-card shadow p-6" style="border-radius: 1rem;">
+
+                                    <!-- Ustawienia Skanowania Tab -->
+                                    <div v-if="settingsTab === 'scanning'" class="flex flex-column gap-4">
+                                        <div class="flex align-items-center justify-content-between gap-4 mb-4">
+                                            <div class="flex flex-column gap-2">
+                                                <div class="flex align-items-center gap-2">
+                                                    <i class="pi pi-th-large text-700" style="font-size: 1.5rem;"></i>
+                                                    <span class="text-2xl font-semibold leading-tight text-900">Ustawienia Skanowania</span>
+                                                </div>
+                                                <div class="text-base leading-tight text-500">Skonfiguruj parametry skanowania obszaru wokół Twojej lokalizacji</div>
+                                            </div>
+                                        </div>
+
+                            <!-- Grid Size Toggle -->
+                            <div class="py-2">
+                                <label class="text-sm font-semibold text-900 mb-3 block">
+                                    Domyślny rozmiar siatki
+                                    <i class="pi pi-info-circle text-500 ml-1"
+                                       v-tooltip="'Wybierz domyślny rozmiar siatki dla skanowania obszaru'"></i>
+                                </label>
+                                <div class="surface-0 shadow-sm border-round p-4">
+                                    <div class="flex flex-column lg:flex-row gap-0 lg:gap-4">
+                                        <div
+                                            v-for="(option, index) in gridSizeOptions"
+                                            :key="index"
+                                            class="flex align-items-center gap-4 py-4 lg:py-2 cursor-pointer flex-1"
+                                            :class="{
+                                                'border-bottom-1 surface-border lg:border-bottom-none lg:border-right-1': index < gridSizeOptions.length - 1
+                                            }"
+                                            @click="gridConfig.currentSize = option.value"
+                                        >
+                                            <p-radiobutton v-model="gridConfig.currentSize" name="gridSize" :value="option.value" />
+                                            <div class="flex flex-column gap-1 flex-1">
+                                                <div class="text-900 text-base font-semibold leading-tight">{{ option.title }}</div>
+                                                <div class="text-500 text-sm leading-tight">{{ option.description }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p-message size="small" severity="secondary" variant="simple" class="mt-2">
+                                    Większa siatka = dokładniejsze wyniki, ale więcej kredytów skanowania
+                                </p-message>
+                            </div>
+
+                            <div class="divider" style="border-top: 1px solid #e9e9e9; margin: 0.75rem 0;"></div>
+
+                            <!-- Step Size Slider -->
+                            <div class="py-2">
+                                <label class="text-sm font-semibold text-900 mb-3 block">
+                                    Odstęp między punktami siatki: {{ gridConfig.stepKm * 1000 }}m
+                                    <i class="pi pi-info-circle text-500 ml-1"
+                                       v-tooltip="'Określa odległość między punktami w siatce pomiarowej'"></i>
+                                </label>
+                                <div class="step-slider-container">
+                                    <input
+                                        type="range"
+                                        v-model.number="gridConfig.stepKm"
+                                        min="0.5"
+                                        max="2"
+                                        step="0.5"
+                                        class="step-slider"
+                                    />
+                                    <div class="step-labels">
+                                        <span :class="{ 'active': gridConfig.stepKm === 0.5 }">500m</span>
+                                        <span :class="{ 'active': gridConfig.stepKm === 1 }">1000m</span>
+                                        <span :class="{ 'active': gridConfig.stepKm === 1.5 }">1500m</span>
+                                        <span :class="{ 'active': gridConfig.stepKm === 2 }">2000m</span>
+                                    </div>
+                                </div>
+                                <small class="text-600 block mt-2">
+                                    Mniejszy odstęp = większa precyzja, ale dłuższy czas skanowania
+                                </small>
+                            </div>
+
+                            <div class="divider" style="border-top: 1px solid #e9e9e9; margin: 0.75rem 0;"></div>
+
+                            <!-- Map Center Address -->
+                            <div class="py-2">
+                                <label class="text-sm font-semibold text-900 mb-3 block">
+                                    Punkt centralny skanowania
+                                    <i class="pi pi-info-circle text-500 ml-1"
+                                       v-tooltip="'Adres Twojej firmy lub obszaru, który chcesz monitorować'"></i>
+                                </label>
+                                <div class="p-inputgroup">
+                                    <span class="p-inputgroup-addon">
+                                        <i class="pi pi-map-marker"></i>
+                                    </span>
+                                    <input
+                                        type="text"
+                                        class="p-inputtext p-component"
+                                        placeholder="np. Dublin, Ireland lub 53.3498, -6.2603"
+                                        style="width: 100%;"
+                                    />
+                                    <button class="p-button p-component p-button-primary">
+                                        <i class="pi pi-search"></i>
+                                        <span>Znajdź</span>
+                                    </button>
+                                </div>
+                                <small class="text-600 block mt-2">
+                                    Wprowadź adres lub współrzędne GPS. Siatka będzie generowana wokół tego punktu.
+                                </small>
+                            </div>
+
+                            <!-- Current Settings Summary -->
+                            <div class="surface-100 border-round p-3 mt-4">
+                                <h4 class="text-sm font-semibold text-900 mb-2">Podsumowanie ustawień:</h4>
+                                <div class="text-sm text-600">
+                                    <div class="mb-1">
+                                        <i class="pi pi-th-large mr-2"></i>
+                                        Siatka: <strong>{{ gridConfig.currentSize }}x{{ gridConfig.currentSize }}</strong>
+                                        ({{ gridConfig.currentSize * gridConfig.currentSize }} punktów)
+                                    </div>
+                                    <div class="mb-1">
+                                        <i class="pi pi-arrows-h mr-2"></i>
+                                        Odstęp: <strong>{{ gridConfig.stepKm * 1000 }}m</strong>
+                                    </div>
+                                    <div>
+                                        <i class="pi pi-map-marker mr-2"></i>
+                                        Centrum: <strong>{{ gridConfig.centerLat.toFixed(4) }}, {{ gridConfig.centerLng.toFixed(4) }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                                    </div> <!-- End Scanning Tab -->
+
+                                    <!-- Częstotliwość Tab -->
+                                    <div v-if="settingsTab === 'frequency'" class="flex flex-column gap-4">
+                                        <div class="flex align-items-center justify-content-between gap-4 mb-4">
+                                            <div class="flex flex-column gap-2">
+                                                <div class="flex align-items-center gap-2">
+                                                    <i class="pi pi-clock text-700" style="font-size: 1.5rem;"></i>
+                                                    <span class="text-2xl font-semibold leading-tight text-900">Częstotliwość Skanowania</span>
+                                                </div>
+                                                <div class="text-base leading-tight text-500">Określ jak często chcesz automatycznie skanować pozycje w wynikach wyszukiwania</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Scan Frequency Selection - Grid Style -->
+                                        <div class="py-2">
+                                            <label class="text-sm font-semibold text-900 mb-3 block">
+                                                Jak często skanować obszar?
+                                                <i class="pi pi-info-circle text-500 ml-1"
+                                                   v-tooltip="'Wybierz częstotliwość automatycznego skanowania'"></i>
+                                            </label>
+                                            <div class="surface-0 shadow-sm border-round p-4">
+                                                <div class="flex flex-column lg:flex-row gap-0 lg:gap-4">
+                                                    <div
+                                                        v-for="(option, index) in frequencyOptions"
+                                                        :key="index"
+                                                        class="flex align-items-center gap-4 py-4 lg:py-2 cursor-pointer flex-1"
+                                                        :class="{
+                                                            'border-bottom-1 surface-border lg:border-bottom-none lg:border-right-1': index < frequencyOptions.length - 1
+                                                        }"
+                                                        @click="frequencyConfig.period = option.value"
+                                                    >
+                                                        <p-radiobutton v-model="frequencyConfig.period" name="frequency" :value="option.value" />
+                                                        <div class="flex flex-column gap-1 flex-1">
+                                                            <div class="text-900 text-base font-semibold leading-tight">{{ option.title }}</div>
+                                                            <div class="text-500 text-sm leading-tight">{{ option.description }}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Day of Week Selection (for weekly) -->
+                                            <div v-if="frequencyConfig.period === 'weekly'" class="flex flex-column gap-2 mt-3">
+                                                <label for="dayOfWeek" class="text-sm font-semibold text-900">Dzień tygodnia</label>
+                                                <p-select
+                                                    id="dayOfWeek"
+                                                    v-model="frequencyConfig.dayOfWeek"
+                                                    :options="dayOfWeekOptions"
+                                                    optionLabel="name"
+                                                    optionValue="value"
+                                                    placeholder="Wybierz dzień"
+                                                    class="w-full"
+                                                />
+                                            </div>
+
+                                            <!-- Day of Month Selection (for monthly) -->
+                                            <div v-if="frequencyConfig.period === 'monthly'" class="flex flex-column gap-2 mt-3">
+                                                <label for="dayOfMonth" class="text-sm font-semibold text-900">Dzień miesiąca</label>
+                                                <p-select
+                                                    id="dayOfMonth"
+                                                    v-model="frequencyConfig.dayOfMonth"
+                                                    :options="dayOfMonthOptions"
+                                                    optionLabel="name"
+                                                    optionValue="value"
+                                                    placeholder="Wybierz dzień"
+                                                    class="w-full"
+                                                />
+                                                <p-message size="small" severity="secondary" variant="simple">
+                                                    Jeśli miesiąc nie ma tego dnia, skanowanie odbędzie się ostatniego dnia miesiąca
+                                                </p-message>
+                                            </div>
+                                        </div>
+
+                                        <div class="divider" style="border-top: 1px solid #e9e9e9; margin: 0.75rem 0;"></div>
+
+                                        <!-- Time Selection -->
+                                        <div class="py-2 flex flex-column gap-2">
+                                            <label for="scanTime" class="text-sm font-semibold text-900">
+                                                Preferowana godzina skanowania
+                                            </label>
+                                            <p-inputtext id="scanTime" type="time" v-model="frequencyConfig.time" />
+                                            <p-message size="small" severity="secondary" variant="simple">
+                                                Skanowanie zostanie uruchomione około tej godziny (czas lokalny)
+                                            </p-message>
+                                        </div>
+
+                                        <div class="divider" style="border-top: 1px solid #e9e9e9; margin: 0.75rem 0;"></div>
+
+                                        <!-- Auto-scan Toggle -->
+                                        <div class="py-2">
+                                            <div class="flex align-items-center justify-content-between p-3 border-round surface-100">
+                                                <div>
+                                                    <div class="font-semibold text-900 mb-1">Automatyczne skanowanie</div>
+                                                    <div class="text-sm text-600">Włącz automatyczne skanowanie według harmonogramu</div>
+                                                </div>
+                                                <div class="flex align-items-center">
+                                                    <label class="switch">
+                                                        <input type="checkbox" checked />
+                                                        <span class="slider-switch"></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div> <!-- End Frequency Tab -->
+
+                                    <!-- Powiadomienia Tab -->
+                                    <div v-if="settingsTab === 'notifications'" class="flex flex-column gap-4">
+                                        <div class="flex align-items-center justify-content-between gap-4 mb-4">
+                                            <div class="flex flex-column gap-2">
+                                                <div class="flex align-items-center gap-2">
+                                                    <i class="pi pi-bell text-700" style="font-size: 1.5rem;"></i>
+                                                    <span class="text-2xl font-semibold leading-tight text-900">Powiadomienia</span>
+                                                </div>
+                                                <div class="text-base leading-tight text-500">Zarządzaj powiadomieniami email o zmianach w rankingu i aktywności konkurencji</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Email Notifications -->
+                                        <div class="py-2">
+                                            <div class="font-semibold text-900 mb-3">Powiadomienia Email</div>
+
+                                            <div class="flex align-items-center justify-content-between p-3 border-round surface-100 mb-2">
+                                                <div>
+                                                    <div class="font-medium text-900">Zmiany w rankingu</div>
+                                                    <div class="text-sm text-600">Powiadom mnie gdy pozycja w rankingu się zmieni</div>
+                                                </div>
+                                                <label class="switch">
+                                                    <input type="checkbox" checked />
+                                                    <span class="slider-switch"></span>
+                                                </label>
+                                            </div>
+
+                                            <div class="flex align-items-center justify-content-between p-3 border-round surface-100 mb-2">
+                                                <div>
+                                                    <div class="font-medium text-900">Ukończone skanowanie</div>
+                                                    <div class="text-sm text-600">Powiadom mnie gdy skanowanie zostanie ukończone</div>
+                                                </div>
+                                                <label class="switch">
+                                                    <input type="checkbox" checked />
+                                                    <span class="slider-switch"></span>
+                                                </label>
+                                            </div>
+
+                                            <div class="flex align-items-center justify-content-between p-3 border-round surface-100 mb-2">
+                                                <div>
+                                                    <div class="font-medium text-900">Nowi konkurenci</div>
+                                                    <div class="text-sm text-600">Powiadom mnie gdy pojawią się nowi konkurenci</div>
+                                                </div>
+                                                <label class="switch">
+                                                    <input type="checkbox" />
+                                                    <span class="slider-switch"></span>
+                                                </label>
+                                            </div>
+
+                                            <div class="flex align-items-center justify-content-between p-3 border-round surface-100">
+                                                <div>
+                                                    <div class="font-medium text-900">Podsumowanie tygodniowe</div>
+                                                    <div class="text-sm text-600">Otrzymuj cotygodniowy raport z wynikami</div>
+                                                </div>
+                                                <label class="switch">
+                                                    <input type="checkbox" checked />
+                                                    <span class="slider-switch"></span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="divider" style="border-top: 1px solid #e9e9e9; margin: 0.75rem 0;"></div>
+
+                                        <!-- Email Address -->
+                                        <div class="py-2 flex flex-column gap-2">
+                                            <label for="notificationEmail" class="text-sm font-semibold text-900">Adres email</label>
+                                            <p-inputtext id="notificationEmail" type="email" value="adrian.c@example.com" class="w-full" />
+                                            <p-message size="small" severity="secondary" variant="simple">
+                                                Wszystkie powiadomienia zostaną wysłane na ten adres
+                                            </p-message>
+                                        </div>
+
+                                        <!-- Push Notifications -->
+                                        <div class="mb-4">
+                                            <div class="font-semibold text-900 mb-3">Powiadomienia Push</div>
+
+                                            <div class="flex align-items-center justify-content-between p-3 border-round surface-100">
+                                                <div>
+                                                    <div class="font-medium text-900">Włącz powiadomienia push</div>
+                                                    <div class="text-sm text-600">Otrzymuj powiadomienia w przeglądarce</div>
+                                                </div>
+                                                <label class="switch">
+                                                    <input type="checkbox" />
+                                                    <span class="slider-switch"></span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div> <!-- End Notifications Tab -->
+
+                                </div> <!-- End surface-card -->
+                            </div> <!-- End col-span-9 -->
+                        </div> <!-- End grid -->
+                        </div> <!-- End Settings Content with Max Width -->
+                    </div> <!-- Koniec Settings Container -->
+
+                </div> <!-- Koniec Main Content Area -->
+            </div> <!-- Koniec głównego flex kontenera -->
+        </div> <!-- Koniec app -->
+    </div> <!-- Koniec wrapper -->
+
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <!-- PrimeVue V4 - Single UMD bundle (JavaScript only, using V3 CSS for styling) -->
+    <script src="https://unpkg.com/primevue/umd/primevue.min.js"></script>
+
+    <!-- Leaflet -->
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+
+    <!-- Leaflet.markercluster -->
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+    <script>
+        const { createApp } = Vue;
+
+        const app = createApp({
+            data() {
+                return {
+                    editMode: false,
+                    sidebarView: 'info',
+                    activeTab: 'map',
+                    settingsTab: 'scanning', // Active sub-tab in Settings: scanning, frequency, notifications
+                    tabs: [
+                        { id: 'map', label: 'Map View', icon: 'pi pi-map' },
+                        { id: 'comparison', label: 'Comparison View', icon: 'pi pi-chart-bar' },
+                        { id: 'analysis', label: 'Scan Analysis', icon: 'pi pi-chart-line' },
+                        { id: 'settings', label: 'Ustawienia', icon: 'pi pi-cog' }
+                    ],
+                    location: {
+                        name: 'Hi, Adrian C.',
+                        address: 'Plan - Pro',
+                        city: 'Dublin',
+                        postal: 'D02 XY45',
+                        phone: '+353 1 234 5678',
+                        status: 'Active'
+                    },
+                    keywords: [
+                        'dublin painters',
+                        'painters dublin',
+                        'house painting',
+                        'exterior painting',
+                        'interior painting'
+                    ],
+                    newKeyword: '',
+                    selectedDateIndex: 15,
+                    dates: [],
+                    map: null,
+                    markers: [],
+                    markerClusterGroup: null,
+                    // Grid configuration
+                    gridConfig: {
+                        centerLat: 53.3498,  // User's business location (configurable)
+                        centerLng: -6.2603,
+                        stepKm: 1,           // Default 1km step (configurable)
+                        currentSize: 9       // Current grid size (9x9, 6x6, 3x3, or 1x1)
+                    },
+                    // Frequency configuration
+                    frequencyConfig: {
+                        period: 'weekly',    // daily, weekly, monthly
+                        time: '09:00',       // Preferred scan time
+                        autoScan: true,      // Auto-scan enabled
+                        dayOfWeek: '1',      // Monday (for weekly scans)
+                        dayOfMonth: 1        // 1st day (for monthly scans)
+                    },
+                    scanCredits: {
+                        used: 158236,
+                        total: 200000
+                    },
+                    aiTokens: {
+                        used: 14237,
+                        total: 500000
+                    },
+                    frequencyOptions: [
+                        { title: 'Codziennie', description: 'Skanowanie codziennie', value: 'daily' },
+                        { title: 'Co tydzień', description: 'Raz w tygodniu', value: 'weekly' },
+                        { title: 'Co miesiąc', description: 'Raz w miesiącu', value: 'monthly' }
+                    ],
+                    dayOfWeekOptions: [
+                        { name: 'Poniedziałek', value: '1' },
+                        { name: 'Wtorek', value: '2' },
+                        { name: 'Środa', value: '3' },
+                        { name: 'Czwartek', value: '4' },
+                        { name: 'Piątek', value: '5' },
+                        { name: 'Sobota', value: '6' },
+                        { name: 'Niedziela', value: '0' }
+                    ],
+                    dayOfMonthOptions: Array.from({length: 31}, (_, i) => ({ name: String(i + 1), value: i + 1 })),
+                    gridSizeOptions: [
+                        { title: '3x3', description: 'Szybkie skanowanie (9 punktów)', value: 3 },
+                        { title: '6x6', description: 'Zbalansowane (36 punktów)', value: 6 },
+                        { title: '9x9', description: 'Dokładne (81 punktów)', value: 9 }
+                    ],
+                    showBusinessPanel: true, // Panel always visible
+                    selectedKeyword: 'dublin painters',
+                    reportOptions: [
+                        { name: 'dublin painters', code: 'dp' },
+                        { name: 'dublin painters (17)', code: 'dp17' },
+                        { name: 'painters dublin (17)', code: 'pd17' },
+                        { name: 'exterior painting (5.8)', code: 'ep58' }
+                    ],
+                    selectedReport: null,
+                    showReportDropdown: false,
+                    showGenerateMenu: false,
+                    isLoadingReportData: false,
+                    selectedRanking: 9, // Central marker ranking (default)
+                    businessListings: [],
+                    isLoadingBusinessData: true // Loading state for skeleton
+                };
+            },
+            computed: {
+                visibleDates() {
+                    // Show 15 dates centered around selected date
+                    const visibleCount = 15;
+                    const halfVisible = Math.floor(visibleCount / 2);
+
+                    let startIndex = Math.max(0, this.selectedDateIndex - halfVisible);
+                    let endIndex = Math.min(this.dates.length, startIndex + visibleCount);
+
+                    // Adjust if we're near the end
+                    if (endIndex - startIndex < visibleCount) {
+                        startIndex = Math.max(0, endIndex - visibleCount);
+                    }
+
+                    return this.dates.slice(startIndex, endIndex).map((date, idx) => ({
+                        ...date,
+                        index: startIndex + idx
+                    }));
+                }
+            },
+            mounted() {
+                this.generateDates();
+                this.initMap();
+
+                // Set default selected report
+                this.selectedReport = this.reportOptions[0];
+
+                // Load business data for central marker with simulated delay
+                // TODO: Replace with actual API call to fetch competitor data
+                setTimeout(() => {
+                    this.businessListings = this.generateBusinessListings(this.selectedRanking);
+                    this.isLoadingBusinessData = false;
+                }, 2000); // 2 second delay to simulate API loading
+
+                // Expose map globally for testing
+                window.testMap = this.map;
+            },
+            methods: {
+                toggleEditMode() {
+                    this.editMode = !this.editMode;
+                    if (!this.editMode) {
+                        // Save changes
+                        console.log('Saving location data:', this.location);
+                    }
+                },
+                toggleReportDropdown() {
+                    this.showReportDropdown = !this.showReportDropdown;
+                },
+                selectReport(option) {
+                    this.selectedReport = option;
+                    this.showReportDropdown = false;
+
+                    // Simulate data reload
+                    this.isLoadingReportData = true;
+                    console.log('🔄 Ładowanie danych raportu:', option.name);
+
+                    setTimeout(() => {
+                        // Simulate successful data load
+                        this.isLoadingReportData = false;
+                        console.log('✅ Dane raportu załadowane:', option.name);
+                    }, 1500); // 1.5 second loading simulation
+                },
+                toggleGenerateMenu() {
+                    this.showGenerateMenu = !this.showGenerateMenu;
+                },
+                generatePDF() {
+                    console.log('📄 Generowanie raportu PDF...');
+                    this.showGenerateMenu = false;
+                    // TODO: Implement PDF generation
+                },
+                generateCSV() {
+                    console.log('📊 Generowanie raportu CSV...');
+                    this.showGenerateMenu = false;
+                    // TODO: Implement CSV generation
+                },
+                addKeyword() {
+                    if (this.newKeyword.trim()) {
+                        this.keywords.push(this.newKeyword.trim());
+                        this.newKeyword = '';
+                    }
+                },
+                removeKeyword(index) {
+                    this.keywords.splice(index, 1);
+                },
+                generateDates() {
+                    const today = new Date();
+                    const dates = [];
+
+                    // Generate 30 dates (15 before, today, 14 after)
+                    for (let i = -15; i <= 14; i++) {
+                        const date = new Date(today);
+                        date.setDate(today.getDate() + i);
+
+                        const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                        const weekdayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+                        dates.push({
+                            day: date.getDate(),
+                            month: monthNames[date.getMonth()],
+                            weekday: weekdayNames[date.getDay()],
+                            date: date
+                        });
+                    }
+
+                    this.dates = dates;
+                },
+                selectDate(index) {
+                    this.selectedDateIndex = index;
+
+                    // Show loading state for business data
+                    this.isLoadingBusinessData = true;
+
+                    // Update map markers
+                    this.updateMapMarkers();
+
+                    // Simulate random ranking for different dates (1-20)
+                    // TODO: Replace with actual API data for this specific date
+                    const newRanking = Math.floor(Math.random() * 20) + 1;
+                    this.selectedRanking = newRanking;
+
+                    // Reload business listings with new ranking
+                    setTimeout(() => {
+                        this.businessListings = this.generateBusinessListings(newRanking);
+                        this.isLoadingBusinessData = false;
+                        console.log(`📅 Data aktualizowana: pozycja ${newRanking}`);
+                    }, 800); // Shorter delay for date changes
+                },
+                scrollDates(direction) {
+                    // Update the selected date index
+                    const newIndex = this.selectedDateIndex + direction;
+                    if (newIndex >= 0 && newIndex < this.dates.length) {
+                        this.selectDate(newIndex);
+                    }
+                },
+                initMap() {
+                    // Initialize Leaflet map centered on user's business location
+                    this.map = L.map('map').setView([this.gridConfig.centerLat, this.gridConfig.centerLng], 13);
+
+                    // Add grayscale map tiles (CartoDB Light)
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                        subdomains: 'abcd',
+                        maxZoom: 20
+                    }).addTo(this.map);
+
+                    // Set initial grid size based on current zoom
+                    this.updateGridSize();
+
+                    // Initial grid markers
+                    this.updateMapMarkers();
+
+                    // Listen to zoom changes - update marker sizes but keep rankings
+                    this.map.on('zoomend', () => {
+                        console.log('🔍 Zoom changed to:', this.map.getZoom());
+                        this.updateMarkerSizes();
+                    });
+                },
+                updateGridSize() {
+                    const zoom = this.map.getZoom();
+                    let newSize;
+
+                    // Adaptive grid sizing based on zoom level
+                    if (zoom >= 13) {
+                        newSize = 9;  // Close zoom: 9x9 grid
+                    } else if (zoom >= 11) {
+                        newSize = 6;  // Medium zoom: 6x6 grid
+                    } else if (zoom >= 9) {
+                        newSize = 3;  // Far zoom: 3x3 grid
+                    } else {
+                        newSize = 1;  // Very far zoom: 1x1 (center only)
+                    }
+
+                    this.gridConfig.currentSize = newSize;
+                },
+                updateMapMarkers() {
+                    console.log(`🔄 updateMapMarkers called - Grid: ${this.gridConfig.currentSize}×${this.gridConfig.currentSize}`);
+
+                    // Clear existing markers
+                    console.log(`   Removing ${this.markers.length} old markers`);
+                    this.markers.forEach(marker => this.map.removeLayer(marker));
+                    this.markers = [];
+                    this.selectedMarker = null; // Reset selected marker
+
+                    const gridSize = this.gridConfig.currentSize;
+                    const centerLat = this.gridConfig.centerLat;
+                    const centerLng = this.gridConfig.centerLng;
+
+                    // Convert km to degrees for latitude (constant: 1 degree ≈ 111km)
+                    const stepDegreesLat = this.gridConfig.stepKm / 111;
+
+                    // Convert km to degrees for longitude (varies with latitude)
+                    // At latitude φ: 1 degree longitude = 111 * cos(φ) km
+                    const stepDegreesLng = this.gridConfig.stepKm / (111 * Math.cos(centerLat * Math.PI / 180));
+
+                    // Calculate how many steps from center (e.g., 9x9 = 4 steps each way, 6x6 = 2.5, etc.)
+                    const halfGrid = (gridSize - 1) / 2;
+
+                    // Create grid FROM CENTER: center point ± halfGrid steps
+                    // Grid is SQUARE (same physical distance in both directions)
+                    for (let row = -halfGrid; row <= halfGrid; row++) {
+                        for (let col = -halfGrid; col <= halfGrid; col++) {
+                            const lat = centerLat + (row * stepDegreesLat);
+                            const lng = centerLng + (col * stepDegreesLng);
+
+                            // Random ranking between 1-20+
+                            const ranking = Math.floor(Math.random() * 25) + 1;
+
+                            // Get colors and size based on ranking (size calculated from zoom/step)
+                            const { outerColor, innerColor, textColor, shadowColor, size } = this.getMarkerStyle(ranking);
+
+                            // Create custom div icon with two-layer design:
+                            // - Outer: large transparent circle (overlaps with neighbors)
+                            // - Inner: small solid circle with ranking number
+                            const innerCircleSize = 48; // Fixed size for inner circle with number
+
+                            const icon = L.divIcon({
+                                className: 'custom-marker',
+                                html: `
+                                    <div class="outer-circle" style="
+                                        --shadow-color: ${shadowColor};
+                                        --text-color: ${textColor};
+                                        position: relative;
+                                        background: ${outerColor}1A;
+                                        width: ${size}px;
+                                        height: ${size}px;
+                                        border-radius: 50%;
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                    ">
+                                        <div class="ripple-wave"></div>
+                                        <div class="inner-circle" style="
+                                            background: ${innerColor};
+                                            width: ${innerCircleSize}px;
+                                            height: ${innerCircleSize}px;
+                                            border-radius: 50%;
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            font-weight: 600;
+                                            font-size: 13px;
+                                            color: ${textColor};
+                                            text-shadow: 0 1px 0px rgb(255 255 255 / 49%), -1px 1px 0px rgb(255 255 255 / 24%);
+                                        ">
+                                            ${ranking > 20 ? '20+' : ranking}
+                                        </div>
+                                    </div>
+                                `,
+                                iconSize: [size, size],
+                                iconAnchor: [size/2, size/2]
+                            });
+
+                            // Calculate distance from center in meters
+                            const distanceFromCenter = Math.sqrt(row*row + col*col) * this.gridConfig.stepKm * 1000;
+
+                            // Create marker
+                            const marker = L.marker([lat, lng], {
+                                icon: icon,
+                                ranking: ranking,
+                                zIndexOffset: ranking <= 3 ? 1000 : 0  // Top rankings on top
+                            })
+                                .bindPopup(`
+                                    <div style="min-width: 150px;">
+                                        <strong>Pozycja: ${ranking > 20 ? '20+' : ranking}</strong><br>
+                                        <small>Od środka: ${Math.round(distanceFromCenter)}m</small><br>
+                                        <small>Grid: ${gridSize}×${gridSize} (${row >= 0 ? '+' : ''}${row}, ${col >= 0 ? '+' : ''}${col})</small><br>
+                                        <small>Zmiana: ${Math.random() > 0.5 ? '+' : '-'}${Math.floor(Math.random() * 3)}</small>
+                                    </div>
+                                `);
+
+                            // Add click handler to open business panel and select marker
+                            marker.on('click', () => {
+                                this.selectMarker(marker);
+                                this.openBusinessPanel(ranking);
+                            });
+
+                            // Add marker directly to map (no clustering, dynamic grid instead)
+                            marker.addTo(this.map);
+                            this.markers.push(marker);
+
+                            // Select first marker (center) by default
+                            if (row === 0 && col === 0) {
+                                this.$nextTick(() => {
+                                    this.selectMarker(marker);
+                                });
+                            }
+                        }
+                    }
+                },
+                getMarkerStyle(ranking) {
+                    // Two colors: intense for outer circle, pastel for inner circle
+                    // Text color is darker for better contrast
+                    // Shadow color for hover effect based on outer color
+                    let outerColor, innerColor, textColor, shadowColor;
+                    if (ranking <= 3) {
+                        outerColor = '#22c55e'; // bright green
+                        innerColor = '#86efac'; // pastel green
+                        textColor = '#16a34a'; // darker green
+                        shadowColor = 'rgba(34, 197, 94, 0.5)'; // green shadow
+                    } else if (ranking <= 7) {
+                        outerColor = '#84cc16'; // lime green
+                        innerColor = '#bef264'; // pastel lime
+                        textColor = '#84cc16'; // darker lime
+                        shadowColor = 'rgba(132, 204, 22, 0.5)'; // lime shadow
+                    } else if (ranking <= 12) {
+                        outerColor = '#eab308'; // yellow
+                        innerColor = '#fde047'; // pastel yellow
+                        textColor = '#eab308'; // darker yellow
+                        shadowColor = 'rgba(234, 179, 8, 0.5)'; // yellow shadow
+                    } else if (ranking <= 18) {
+                        outerColor = '#f97316'; // orange
+                        innerColor = '#fdba74'; // pastel orange
+                        textColor = '#f97316'; // darker orange
+                        shadowColor = 'rgba(249, 115, 22, 0.5)'; // orange shadow
+                    } else {
+                        outerColor = '#ef4444'; // red
+                        innerColor = '#fca5a5'; // pastel red
+                        textColor = '#ef4444'; // darker red
+                        shadowColor = 'rgba(239, 68, 68, 0.5)'; // red shadow
+                    }
+
+                    // Calculate size based on current zoom and step distance
+                    // Size must ensure circles overlap to show full coverage
+                    const zoom = this.map.getZoom();
+
+                    // Convert step distance (km) to pixels at current zoom
+                    // Leaflet: pixels = meters * 2^zoom / 156543.03392
+                    const metersPerPixel = 156543.03392 / Math.pow(2, zoom);
+                    const stepMeters = this.gridConfig.stepKm * 1000;
+                    const stepPixels = stepMeters / metersPerPixel;
+
+                    // Circle should be 2.2x the step to ensure strong overlap
+                    const size = Math.round(stepPixels * 2.2);
+
+                    return { outerColor, innerColor, textColor, shadowColor, size };
+                },
+                updateMarkerSizes() {
+                    // Update marker sizes on zoom while keeping the same rankings
+                    console.log('🔄 Updating marker sizes at zoom:', this.map.getZoom());
+
+                    // Store selected marker latlng
+                    const selectedLatlng = this.selectedMarker ? this.selectedMarker.getLatLng() : null;
+
+                    // Store marker data before removing
+                    const markerData = this.markers.map(marker => ({
+                        latlng: marker.getLatLng(),
+                        ranking: marker.options.ranking
+                    }));
+
+                    // Remove all markers
+                    this.markers.forEach(marker => this.map.removeLayer(marker));
+                    this.markers = [];
+
+                    // Recreate markers with same rankings but updated sizes
+                    markerData.forEach(data => {
+                        const { outerColor, innerColor, textColor, shadowColor, size } = this.getMarkerStyle(data.ranking);
+                        const innerCircleSize = 48;
+
+                        const icon = L.divIcon({
+                            className: 'custom-marker',
+                            html: `
+                                <div class="outer-circle" style="
+                                    --shadow-color: ${shadowColor};
+                                    --text-color: ${textColor};
+                                    position: relative;
+                                    background: ${outerColor}1A;
+                                    width: ${size}px;
+                                    height: ${size}px;
+                                    border-radius: 50%;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                ">
+                                    <div class="ripple-wave"></div>
+                                    <div class="inner-circle" style="
+                                        background: ${innerColor};
+                                        width: ${innerCircleSize}px;
+                                        height: ${innerCircleSize}px;
+                                        border-radius: 50%;
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        font-weight: 600;
+                                        font-size: 13px;
+                                        color: ${textColor};
+                                        text-shadow: 0 1px 0px rgb(255 255 255 / 49%), -1px 1px 0px rgb(255 255 255 / 24%);
+                                    ">
+                                        ${data.ranking > 20 ? '20+' : data.ranking}
+                                    </div>
+                                </div>
+                            `,
+                            iconSize: [size, size],
+                            iconAnchor: [size/2, size/2]
+                        });
+
+                        const marker = L.marker(data.latlng, {
+                            icon: icon,
+                            ranking: data.ranking,
+                            zIndexOffset: data.ranking <= 3 ? 1000 : 0
+                        })
+                            .bindPopup(`
+                                <div style="min-width: 150px;">
+                                    <strong>Pozycja: ${data.ranking > 20 ? '20+' : data.ranking}</strong>
+                                </div>
+                            `);
+
+                        marker.on('click', () => {
+                            this.selectMarker(marker);
+                            this.openBusinessPanel(data.ranking);
+                        });
+
+                        marker.addTo(this.map);
+                        this.markers.push(marker);
+
+                        // Restore selected state if this was the selected marker
+                        if (selectedLatlng &&
+                            data.latlng.lat === selectedLatlng.lat &&
+                            data.latlng.lng === selectedLatlng.lng) {
+                            this.$nextTick(() => {
+                                this.selectMarker(marker);
+                            });
+                        }
+                    });
+
+                    console.log('✅ Updated', markerData.length, 'markers with new sizes');
+                },
+                selectMarker(marker) {
+                    // Remove 'selected' class from previously selected marker
+                    if (this.selectedMarker) {
+                        const prevElement = this.selectedMarker.getElement();
+                        if (prevElement) {
+                            const prevOuterCircle = prevElement.querySelector('.outer-circle');
+                            if (prevOuterCircle) {
+                                prevOuterCircle.classList.remove('selected');
+                            }
+                        }
+                        // Reset z-index
+                        this.selectedMarker.setZIndexOffset(this.selectedMarker.options.ranking <= 3 ? 1000 : 0);
+                    }
+
+                    // Add 'selected' class to new marker
+                    const element = marker.getElement();
+                    if (element) {
+                        const outerCircle = element.querySelector('.outer-circle');
+                        if (outerCircle) {
+                            outerCircle.classList.add('selected');
+                        }
+                    }
+
+                    // Set high z-index for selected marker to show ripples above other markers
+                    marker.setZIndexOffset(10000);
+
+                    // Store reference to selected marker
+                    this.selectedMarker = marker;
+                },
+                getRankingColor(ranking) {
+                    // Gradient from green (1) to red (20)
+                    const hue = (1 - (ranking - 1) / 19) * 120; // 120=green, 0=red
+                    return `hsl(${hue}, 70%, 50%)`;
+                },
+                getRankingBadgeColor(position) {
+                    // Use same color logic as map markers for consistency
+                    if (position <= 3) {
+                        return '#22c55e'; // bright green for top 3
+                    } else if (position <= 7) {
+                        return '#84cc16'; // lime green for good
+                    } else if (position <= 12) {
+                        return '#eab308'; // yellow for medium
+                    } else if (position <= 18) {
+                        return '#f97316'; // orange for poor
+                    } else {
+                        return '#ef4444'; // red for very poor/20+
+                    }
+                },
+                openBusinessPanel(ranking) {
+                    this.selectedRanking = ranking;
+                    this.showBusinessPanel = true;
+
+                    // Show loading state
+                    this.isLoadingBusinessData = true;
+                    this.businessListings = [];
+
+                    // Simulate API call to fetch competitor data
+                    // TODO: Replace with actual API call
+                    setTimeout(() => {
+                        this.businessListings = this.generateBusinessListings(ranking);
+                        this.isLoadingBusinessData = false;
+                    }, 1500); // 1.5 second delay
+                },
+                generateBusinessListings(clickedRanking) {
+                    const businessNames = [
+                        'Dublin House Painters',
+                        'Pro Paint Solutions',
+                        'Emerald Painting Services',
+                        'Premier Decorators Dublin',
+                        'Colorful Homes Ireland',
+                        'Expert Paint & Decor',
+                        'Dublin Interior Design',
+                        'Quality Painters Ltd',
+                        'Perfect Finish Painting',
+                        'Dublin Exterior Experts'
+                    ];
+
+                    const descriptions = [
+                        'Professional painting services for residential and commercial properties. Specializing in interior and exterior painting with over 15 years of experience.',
+                        'High-quality painting and decorating services throughout Dublin. We pride ourselves on attention to detail and customer satisfaction.',
+                        'Expert painters providing top-notch services for homes and businesses. Free quotes, competitive prices, and exceptional results.',
+                        'Transform your space with our professional painting services. Trusted by Dublin homeowners for quality workmanship.',
+                        'Comprehensive painting solutions for all your needs. From small touch-ups to complete home transformations.',
+                        'Experienced team of professional painters delivering excellence. Fully insured and highly rated by our customers.'
+                    ];
+
+                    const streets = [
+                        'O\'Connell Street',
+                        'Grafton Street',
+                        'Dame Street',
+                        'Parnell Street',
+                        'Abbey Street',
+                        'Henry Street',
+                        'Talbot Street',
+                        'Capel Street'
+                    ];
+
+                    const listings = [];
+                    const numListings = 5 + Math.floor(Math.random() * 5); // 5-10 listings
+
+                    for (let i = 0; i < numListings; i++) {
+                        const position = i + 1;
+                        const name = businessNames[i % businessNames.length];
+                        const initials = name.split(' ').map(w => w[0]).slice(0, 2).join('');
+                        const rating = 3.5 + Math.random() * 1.5; // 3.5 - 5.0
+                        const reviewCount = Math.floor(50 + Math.random() * 450); // 50-500 reviews
+                        const streetNum = Math.floor(1 + Math.random() * 200);
+                        const street = streets[Math.floor(Math.random() * streets.length)];
+
+                        listings.push({
+                            name: name,
+                            initials: initials,
+                            description: descriptions[Math.floor(Math.random() * descriptions.length)],
+                            address: `${streetNum} ${street}, Dublin`,
+                            phone: Math.random() > 0.3 ? `+353 ${Math.floor(1 + Math.random() * 9)} ${Math.floor(100 + Math.random() * 900)} ${Math.floor(1000 + Math.random() * 9000)}` : null,
+                            rating: rating,
+                            reviewCount: reviewCount,
+                            position: position
+                        });
+                    }
+
+                    return listings;
+                },
+                saveSettings() {
+                    // Save settings and refresh map
+                    console.log('💾 Saving settings:', this.gridConfig);
+
+                    // Show toast notification (if PrimeVue Toast is available)
+                    // this.$toast.add({ severity: 'success', summary: 'Zapisano', detail: 'Ustawienia zostały zaktualizowane', life: 3000 });
+
+                    // Refresh map with new grid configuration
+                    this.updateMarkerGrid();
+
+                    // Switch back to map view
+                    this.activeTab = 'map';
+                }
+            }
+        });
+
+        // PrimeVue V4 Config (simple - using V3 CSS for styling)
+        app.use(PrimeVue.Config);
+
+        // PrimeVue V4 Component Registration (using p- prefix in templates)
+        app.component('p-button', PrimeVue.Button);
+        app.component('p-inputtext', PrimeVue.InputText);
+        app.component('p-tag', PrimeVue.Tag);
+        app.component('p-skeleton', PrimeVue.Skeleton);
+        app.component('p-select', PrimeVue.Select);
+        app.component('p-multiselect', PrimeVue.MultiSelect);
+        app.component('p-radiobutton', PrimeVue.RadioButton);
+        app.component('p-message', PrimeVue.Message);
+
+        // PrimeVue V4 Directives
+        app.directive('tooltip', PrimeVue.Tooltip);
+
+        app.mount('#app');
+    </script>
+</body>
+</html>
