@@ -18,7 +18,8 @@
     "primevue": "^4.0.7",
     "prismjs": "^1.30.0",
     "qrcode": "^1.5.4",
-    "vue": "^3.4.21"
+    "vue": "^3.4.21",
+    "vue-router": "^4.6.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.16",

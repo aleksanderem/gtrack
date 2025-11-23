@@ -7,6 +7,7 @@ import ConfirmationService from 'primevue/confirmationservice'
 import ToastService from 'primevue/toastservice'
 import DialogService from 'primevue/dialogservice'
 import App from './App.vue'
+import router from './router'
 
 // Import Tailwind CSS with PrimeUI plugin
 import './styles.css'
@@ -42,6 +43,7 @@ const LaraBlue = definePreset(Lara, {
 
 const app = createApp(App)
 
+app.use(router)
 app.use(PrimeVue, {
     theme: {
         preset: LaraBlue,

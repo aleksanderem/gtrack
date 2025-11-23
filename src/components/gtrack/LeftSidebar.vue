@@ -3,13 +3,13 @@
     <div class="">
       <!-- Back Button -->
       <div class="flex items-center justify-between px-6 space-y-6">
-        <a
-          href="#"
+        <router-link
+          to="/"
           class="flex items-center gap-2 py-2 text-sm font-medium text-surface-600 hover:text-surface-900 no-underline"
         >
           <i class="pi pi-arrow-left text-base"></i>
           <span>Powrót do harmonogramów</span>
-        </a>
+        </router-link>
       
       </div>
 
