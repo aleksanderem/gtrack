@@ -34,9 +34,9 @@
             </div>
         </template>
         <template #content>
-            <div class="grid grid-cols-1 gap-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 <!-- LEFT COLUMN: PREVIEW -->
-                <div class="col-span-12">
+                <div class="col-span-1 lg:col-span-7 xl:col-span-8">
                     <div class="flex flex-col gap-4 sticky top-6">
                         <!-- Visual Preview Area -->
                         <div class="bg-gray-200 p-12 rounded-xl flex justify-center items-center relative pattern-grid min-h-[600px]">
@@ -250,7 +250,7 @@
                 </div>
 
                 <!-- RIGHT COLUMN: SETTINGS -->
-                <div class="col-span-1 md:col-span-2">
+                <div class="col-span-1 lg:col-span-5 xl:col-span-4">
                     <div v-if="loading" class="flex flex-col gap-4">
                         <Skeleton height="3rem" class="mb-2" />
                         <Skeleton height="3rem" class="mb-2" />
@@ -451,6 +451,7 @@
                 </div>
             </div>
         </template>
+        
         </Card>
     </div>
 
@@ -524,87 +525,141 @@
             </template>
         </Card>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- LEFT: Live Preview -->
-            <Card class="shadow-sm border border-gray-100 h-full">
-                <template #title>Podgląd na żywo</template>
-                <template #content>
-                    <div class="bg-gray-100 rounded-xl p-4 h-[600px] overflow-hidden flex justify-center items-center border border-gray-200">
-                        <div class="w-[375px] h-full bg-white rounded-2xl shadow-2xl overflow-y-auto custom-scrollbar transform scale-90 origin-center">
+        <Card class="shadow-sm border border-gray-100">
+            <template #title>
+                <div class="flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xl font-semibold">Podgląd na żywo</span>
+                    </div>
+                    
+                    <!-- Custom Toolbar -->
+                    <div class="flex flex-wrap items-center justify-between gap-4 p-3 bg-surface-50 rounded-xl border border-surface-200">
+                        <!-- Left: View Modes -->
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm text-surface-600 font-medium mr-2">Widok:</span>
+                            <SelectButton v-model="previewDevice" :options="['mobile', 'tablet', 'desktop']" :allowEmpty="false" aria-label="View Mode">
+                                <template #option="{ option }">
+                                    <i :class="[
+                                        'pi', 
+                                        option === 'mobile' ? 'pi-mobile' : 
+                                        option === 'tablet' ? 'pi-tablet' : 'pi-desktop',
+                                        'text-lg'
+                                    ]"></i>
+                                </template>
+                            </SelectButton>
+                        </div>
+
+                        <!-- Center: Edit Action -->
+                        <Button 
+                            label="Edytuj stronę" 
+                            icon="pi pi-pencil" 
+                            severity="primary" 
+                            @click="landingSettingsVisible = true"
+                        />
+
+                        <!-- Right: Actions -->
+                        <div class="flex items-center gap-2">
+                             <Button 
+                                label="Podgląd w nowym oknie" 
+                                icon="pi pi-external-link" 
+                                severity="secondary" 
+                                outlined 
+                                @click="openNewWindow" 
+                            />
+                            <Button 
+                                label="Zapisz" 
+                                icon="pi pi-save" 
+                                :loading="saving"
+                                @click="saveSettings" 
+                            />
+                        </div>
+                    </div>
+                </div>
+            </template>
+            
+            <template #content>
+                 <div class="bg-gray-100 rounded-xl p-8 min-h-[700px] overflow-hidden flex justify-center items-start border border-gray-200 relative transition-all">
+                    <!-- Dynamic Container -->
+                    <div 
+                        class="bg-white shadow-2xl overflow-hidden transition-all duration-500 ease-in-out mx-auto relative z-10"
+                        :class="{
+                            'w-[375px] rounded-3xl my-4 h-[667px] border-8 border-gray-800': previewDevice === 'mobile',
+                            'w-[768px] rounded-xl my-8 h-[1024px] border-8 border-gray-800': previewDevice === 'tablet',
+                            'w-full h-full rounded-none border-0 min-h-[650px]': previewDevice === 'desktop'
+                        }"
+                    >
+                        <div class="h-full w-full overflow-y-auto custom-scrollbar bg-white">
                             <PublicFeedbackView :preview-mode="true" :preview-settings="settings" />
                         </div>
                     </div>
-                </template>
-            </Card>
+                 </div>
+            </template>
+        </Card>
 
-            <!-- RIGHT: Settings -->
-            <Card class="shadow-sm border border-gray-100 h-full">
-                <template #title>
-                    <div class="flex flex-col gap-1 mb-4">
-                        <span>Konfiguracja Strony Oceny (Landing Page)</span>
-                        <span class="text-sm text-gray-500 font-normal">Dostosuj wygląd i zachowanie strony, na którą trafią klienci po zeskanowaniu kodu QR.</span>
+        <!-- Settings Drawer -->
+        <Drawer v-model:visible="landingSettingsVisible" header="Konfiguracja Strony" position="right" class="!w-full md:!w-[500px]">
+            <div class="flex flex-col gap-6 p-1">
+                <div class="flex flex-col gap-1 mb-4">
+                    <span class="text-sm text-gray-500 font-normal">Dostosuj wygląd i zachowanie strony, na którą trafią klienci po zeskanowaniu kodu QR.</span>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <label class="font-semibold">Nagłówek strony www</label>
+                    <InputText v-model="settings.headline" />
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between">
+                        <label class="font-semibold">Próg przekierowania do Google</label>
+                        <span class="font-bold text-blue-600">{{ settings.min_rating_for_google }} gwiazdki</span>
                     </div>
-                </template>
-                <template #content>
-                    <div class="flex flex-col gap-6">
-                        <div class="flex flex-col gap-2">
-                            <label class="font-semibold">Nagłówek strony www</label>
-                            <InputText v-model="settings.headline" />
-                        </div>
+                    <Slider v-model="settings.min_rating_for_google" :min="1" :max="5" :step="1" />
+                    <small class="text-gray-500">
+                        Jeśli klient oceni na <strong>{{ settings.min_rating_for_google }}</strong> lub więcej, zostanie przekierowany do Google.
+                        Poniżej tej oceny, wyświetlimy wewnętrzny formularz.
+                    </small>
+                </div>
 
-                        <div class="flex flex-col gap-2">
-                            <div class="flex justify-between">
-                                <label class="font-semibold">Próg przekierowania do Google</label>
-                                <span class="font-bold text-blue-600">{{ settings.min_rating_for_google }} gwiazdki</span>
-                            </div>
-                            <Slider v-model="settings.min_rating_for_google" :min="1" :max="5" :step="1" />
-                            <small class="text-gray-500">
-                                Jeśli klient oceni na <strong>{{ settings.min_rating_for_google }}</strong> lub więcej, zostanie przekierowany do Google.
-                                Poniżej tej oceny, wyświetlimy wewnętrzny formularz.
-                            </small>
-                        </div>
-
-                        <div class="flex flex-col gap-2">
-                            <label class="font-semibold">Styl</label>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="text-sm text-gray-600 mb-1 block">Kolor wiodący</label>
-                                    <div class="flex items-center gap-2">
-                                        <ColorPicker v-model="settings.theme_color" />
-                                        <span class="text-sm">#{{ settings.theme_color }}</span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="text-sm text-gray-600 mb-1 block">Logo</label>
-                                    <Button label="Wybierz" icon="pi pi-upload" size="small" outlined />
-                                </div>
+                <div class="flex flex-col gap-2">
+                    <label class="font-semibold">Styl</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-sm text-gray-600 mb-1 block">Kolor wiodący</label>
+                            <div class="flex items-center gap-2">
+                                <ColorPicker v-model="settings.theme_color" />
+                                <span class="text-sm">#{{ settings.theme_color }}</span>
                             </div>
                         </div>
-
-                        <div class="border-t pt-4 mt-2">
-                            <label class="font-semibold block mb-3">Pola formularza negatywnego</label>
-                            <DataTable :value="settings.form_fields || []" size="small" class="text-sm">
-                                <Column field="label" header="Pole"></Column>
-                                <Column header="Widoczne">
-                                    <template #body="slotProps">
-                                        <ToggleSwitch v-model="slotProps.data.visible" />
-                                    </template>
-                                </Column>
-                                <Column header="Wymagane">
-                                    <template #body="slotProps">
-                                        <Checkbox v-model="slotProps.data.required" :binary="true" :disabled="!slotProps.data.visible" />
-                                    </template>
-                                </Column>
-                            </DataTable>
-                        </div>
-                        
-                        <div class="flex justify-end mt-4">
-                            <Button label="Zapisz ustawienia" icon="pi pi-save" @click="saveSettings" :loading="saving" />
+                        <div>
+                            <label class="text-sm text-gray-600 mb-1 block">Logo</label>
+                            <Button label="Wybierz" icon="pi pi-upload" size="small" outlined />
                         </div>
                     </div>
-                </template>
-            </Card>
-        </div>
+                </div>
+
+                <div class="border-t pt-4 mt-2">
+                    <label class="font-semibold block mb-3">Pola formularza negatywnego</label>
+                    <DataTable :value="settings.form_fields || []" size="small" class="text-sm">
+                        <Column field="label" header="Pole"></Column>
+                        <Column header="Widoczne">
+                            <template #body="slotProps">
+                                <ToggleSwitch v-model="slotProps.data.visible" />
+                            </template>
+                        </Column>
+                        <Column header="Wymagane">
+                            <template #body="slotProps">
+                                <Checkbox v-model="slotProps.data.required" :binary="true" :disabled="!slotProps.data.visible" />
+                            </template>
+                        </Column>
+                    </DataTable>
+                </div>
+                
+                <div class="flex justify-end mt-4 pt-4 border-t">
+                    <Button label="Zamknij" severity="secondary" text @click="landingSettingsVisible = false" class="mr-2" />
+                    <Button label="Zapisz zmiany" icon="pi pi-save" @click="saveSettings" :loading="saving" />
+                </div>
+            </div>
+        </Drawer>
     </div>
   </div>
 </template>
@@ -631,6 +686,7 @@ import { useToast } from 'primevue/usetoast';
 import Popover from 'primevue/popover';
 import Panel from 'primevue/panel';
 import Toolbar from 'primevue/toolbar';
+import Drawer from 'primevue/drawer';
 import { ReviewsService } from '../../../services/ReviewsService';
 import PositionControls from './PositionControls.vue';
 import { useQRCode } from '@vueuse/integrations/useQRCode';
@@ -679,6 +735,9 @@ const settings = ref({
 });
 
 const activeView = ref('graphics');
+const landingSettingsVisible = ref(false);
+const previewDevice = ref('mobile'); // mobile, tablet, desktop
+
 const viewOptions = [
     { label: 'Generator Grafik', value: 'graphics' },
     { label: 'Strona Oceny (Landing)', value: 'landing' }
@@ -789,6 +848,13 @@ const downloadFile = (type, format) => {
         detail: `Generowanie pliku ${type.toUpperCase()} (${format})...`, 
         life: 4000 
     });
+};
+
+const openNewWindow = () => {
+    // Simulate opening the live feedback page
+    // In a real app, this would be the actual public URL
+    const url = `${window.location.origin}/feedback/demo-123`;
+    window.open(url, '_blank');
 };
 
 </script>

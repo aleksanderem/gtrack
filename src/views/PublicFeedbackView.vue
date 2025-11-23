@@ -1,9 +1,9 @@
 <template>
-  <div class="min-h-screen bg-surface-50 flex flex-col items-center justify-center p-4 font-sans" :style="{ fontFamily: currentSettings.font_family || 'Inter, sans-serif' }">
+  <div class="bg-surface-50 flex flex-col items-center justify-center font-sans transition-all" :class="[previewMode ? 'min-h-full p-0' : 'min-h-screen p-4']" :style="{ fontFamily: currentSettings.font_family || 'Inter, sans-serif' }">
     
-    <div class="w-full max-w-md bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-500">
+    <div class="w-full max-w-md bg-white shadow-lg overflow-hidden transition-all duration-500" :class="[previewMode ? 'min-h-full rounded-none' : 'rounded-2xl min-h-screen sm:min-h-[initial]']">
         <!-- Header / Logo -->
-        <div class="p-8 flex flex-col items-center text-center border-b border-surface-100" 
+        <div class="flex flex-col items-center text-center border-b border-surface-100 px-2 py-6 md:p-8" 
              :style="{ borderTop: `6px solid #${currentSettings.theme_color}` }">
             
             <img v-if="currentSettings.logo_url" :src="currentSettings.logo_url" class="h-16 mb-4 object-contain" />
@@ -20,7 +20,7 @@
         </div>
 
         <!-- Content -->
-        <div class="p-8">
+        <div class="px-2 py-6 md:p-8">
             
             <!-- Loading State -->
             <div v-if="loading" class="flex justify-center py-8">
@@ -110,14 +110,14 @@
         </div>
     </div>
 
-    <div class="mt-8 text-xs text-surface-400">
+    <div class="mt-8 text-xs text-surface-400" v-if="!isMobilePreview">
         Powered by GTRACK
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, inject } from 'vue';
 import { useRoute } from 'vue-router';
 import Rating from 'primevue/rating';
 import InputText from 'primevue/inputtext';
@@ -147,6 +147,10 @@ const errors = ref({});
 
 const formData = ref({
     message: ''
+});
+
+const isMobilePreview = computed(() => {
+    return props.previewMode && props.previewSettings?.device === 'mobile';
 });
 
 const currentSettings = computed(() => {
