@@ -140,26 +140,40 @@ const cancelReply = () => {
 };
 
 const openTemplateSelector = () => {
+    // Map review data to feedback format
+    const feedbackData = {
+        name: props.review.author_name?.split(' ')[0] || '',
+        surname: props.review.author_name?.split(' ').slice(1).join(' ') || '',
+        email: props.review.email || '',
+        phone: props.review.phone || '',
+        rating: props.review.rating,
+        date: props.review.date,
+        service_name: props.review.service_context?.service_name || '',
+        employee_name: props.review.service_context?.employee_name || '',
+        order_no: props.review.order_no || ''
+    };
+    
     dialog.open(TemplateSelector, {
         props: {
             header: 'Wybierz szablon',
             style: {
-                width: '400px'
+                width: '90vw',
+                maxWidth: '1200px'
+            },
+            breakpoints: {
+                '960px': '95vw',
+                '640px': '98vw'
             },
             modal: true
+        },
+        data: {
+            feedbackData: feedbackData
         },
         onClose: (options) => {
             const template = options.data;
             if (template) {
                 isReplying.value = true; // Ensure reply mode is open
-                let content = template.content;
-                
-                // Replace Placeholders
-                const customerName = props.review.author_name || 'Kliencie';
-                // Simple replacement for now, case insensitive for {{imie}}
-                content = content.replace(/\{\{imie\}\}/gi, customerName);
-                
-                replyText.value = content;
+                replyText.value = ReviewsService.replaceTemplateVariables(template.content, feedbackData);
             }
         }
     });

@@ -26,7 +26,7 @@
 
     <!-- Loading State -->
     <div v-if="loading" class="space-y-4">
-      <div v-for="i in 3" :key="i" class="p-4 border rounded-lg bg-white shadow-sm">
+      <div v-for="i in 3" :key="i" class="p-4 rounded-lg bg-white shadow-sm">
         <div class="flex gap-4 mb-4">
           <Skeleton shape="circle" size="3rem"></Skeleton>
           <div class="flex-1">

@@ -1,9 +1,14 @@
 <template>
-  <div class="bg-surface-50 flex flex-col items-center justify-center font-sans transition-all" :class="[previewMode ? 'min-h-full p-0' : 'min-h-screen p-4']" :style="{ fontFamily: currentSettings.font_family || 'Inter, sans-serif' }">
+  <div class="bg-surface-50 flex flex-col items-center justify-center font-sans transition-all" :class="[previewMode ? 'p-4' : 'min-h-screen p-4']" :style="{ fontFamily: currentSettings.font_family || 'Inter, sans-serif' }">
     
-    <div class="w-full max-w-md bg-white shadow-lg overflow-hidden transition-all duration-500" :class="[previewMode ? 'min-h-full rounded-none' : 'rounded-2xl min-h-screen sm:min-h-[initial]']">
+    <div class="w-full max-w-md bg-white shadow-lg overflow-hidden transition-all duration-500" :class="[previewMode ? 'min-h-initial rounded-none' : 'rounded-2xl min-h-screen sm:min-h-[initial]']">
+        <!-- Header Image -->
+        <div class="w-full h-32 bg-gray-50 overflow-hidden relative">
+            <img src="/google-reviews-header.png" class="w-full h-full object-cover" alt="Review Header" />
+        </div>
+
         <!-- Header / Logo -->
-        <div class="flex flex-col items-center text-center border-b border-surface-100 px-2 py-6 md:p-8" 
+        <div class="flex flex-col items-center text-center border-b border-surface-100 px-2 py-6 md:p-4 sm:p-4" 
              :style="{ borderTop: `6px solid #${currentSettings.theme_color}` }">
             
             <img v-if="currentSettings.logo_url" :src="currentSettings.logo_url" class="h-16 mb-4 object-contain" />
@@ -20,7 +25,7 @@
         </div>
 
         <!-- Content -->
-        <div class="px-2 py-6 md:p-8">
+        <div class="px-2 py-6 md:p-3">
             
             <!-- Loading State -->
             <div v-if="loading" class="flex justify-center py-8">

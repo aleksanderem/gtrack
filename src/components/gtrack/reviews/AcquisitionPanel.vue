@@ -22,6 +22,21 @@
                 />
             </div>
         </template>
+        <template #end>
+            <div class="flex items-center gap-2 bg-surface-50 px-3 py-1.5 rounded-lg border border-surface-200">
+                <span class="text-sm text-surface-500 hidden md:inline">Link:</span>
+                <span class="text-sm font-mono text-surface-700 max-w-[150px] md:max-w-none truncate select-all">{{ publicUrl }}</span>
+                <Button 
+                    icon="pi pi-copy" 
+                    text 
+                    severity="secondary" 
+                    rounded 
+                    size="small" 
+                    v-tooltip.top="'Skopiuj link'"
+                    @click="copyPublicLink"
+                />
+            </div>
+        </template>
     </Toolbar>
 
     <!-- GRAPHICS GENERATOR VIEW -->
@@ -277,17 +292,75 @@
                                         </div>
                                         <div class="flex flex-col gap-2">
                                             <label class="text-sm font-semibold text-gray-700">Logo Firmy</label>
-                                            <FileUpload 
-                                                mode="basic" 
-                                                name="logo" 
-                                                url="/api/upload" 
-                                                accept="image/*" 
-                                                :maxFileSize="1000000" 
-                                                @upload="onUpload" 
-                                                auto
-                                                chooseLabel="Wybierz plik"
-                                                class="p-button-sm p-button-outlined w-full"
-                                            />
+                                            
+                                            <div class="card">
+                                                <Toast />
+                                                <FileUpload name="logo" url="/api/upload" @upload="onTemplatedUpload" :multiple="false" accept="image/*" :maxFileSize="1000000" @select="onSelectedFiles">
+                                                    <template #header="{ chooseCallback, uploadCallback, clearCallback, files }">
+                                                        <div class="flex flex-wrap justify-between items-center flex-1 gap-2">
+                                                            <div class="flex gap-1">
+                                                                <Button @click="chooseCallback()" icon="pi pi-images" rounded variant="outlined" severity="secondary" size="small" class="!w-8 !h-8 !p-0 !rounded-lg"></Button>
+                                                                <Button @click="uploadEvent(uploadCallback)" icon="pi pi-cloud-upload" rounded variant="outlined" severity="success" :disabled="!files || files.length === 0" size="small" class="!w-8 !h-8 !p-0 !rounded-lg"></Button>
+                                                                <Button @click="clearCallback()" icon="pi pi-times" rounded variant="outlined" severity="danger" :disabled="!files || files.length === 0" size="small" class="!w-8 !h-8 !p-0 !rounded-lg"></Button>
+                                                            </div>
+                                                            <div class="text-xs text-surface-500 ml-auto">
+                                                                {{ totalSize }}B / 1Mb
+                                                            </div>
+                                                            <ProgressBar :value="totalSizePercent" :showValue="false" class="!hidden">
+                                                            </ProgressBar>
+                                                        </div>
+                                                    </template>
+                                                    <template #content="{ files, uploadedFiles, removeUploadedFileCallback, removeFileCallback, messages }">
+                                                        <div class="flex flex-col gap-4 pt-2">
+                                                            <Message v-for="message of messages" :key="message" :class="{ 'mb-4': !files.length && !uploadedFiles.length}" severity="error" size="small">
+                                                                {{ message }}
+                                                            </Message>
+
+                                                            <div v-if="files.length > 0">
+                                                                <div class="flex flex-wrap gap-2">
+                                                                    <div v-for="(file, index) of files" :key="file.name + file.type + file.size" class="p-2 rounded-border flex flex-col border border-surface items-center gap-2 w-full bg-surface-0">
+                                                                        <div>
+                                                                            <img role="presentation" :alt="file.name" :src="file.objectURL" width="50" height="30" class="object-contain max-h-12" />
+                                                                        </div>
+                                                                        <div class="flex flex-col items-center gap-1 w-full overflow-hidden">
+                                                                            <span class="font-semibold text-ellipsis whitespace-nowrap overflow-hidden text-[10px] max-w-full">{{ file.name }}</span>
+                                                                            <div class="text-[10px] text-surface-500">{{ formatSize(file.size) }}</div>
+                                                                        </div>
+                                                                        <div class="flex items-center gap-2">
+                                                                            <Badge value="Pending" severity="warn" size="small" class="text-[10px] px-1 min-w-0" />
+                                                                            <Button icon="pi pi-times" @click="onRemoveTemplatingFile(file, removeFileCallback, index)" variant="outlined" rounded severity="danger" class="!w-6 !h-6 !p-0 !rounded-md" />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div v-if="uploadedFiles.length > 0">
+                                                                <div class="flex flex-wrap gap-2">
+                                                                    <div v-for="(file, index) of uploadedFiles" :key="file.name + file.type + file.size" class="p-2 rounded-border flex flex-col border border-surface items-center gap-2 w-full bg-surface-0">
+                                                                        <div>
+                                                                            <img role="presentation" :alt="file.name" :src="file.objectURL" width="50" height="30" class="object-contain max-h-12" />
+                                                                        </div>
+                                                                        <div class="flex flex-col items-center gap-1 w-full overflow-hidden">
+                                                                            <span class="font-semibold text-ellipsis whitespace-nowrap overflow-hidden text-[10px] max-w-full">{{ file.name }}</span>
+                                                                            <div class="text-[10px] text-surface-500">{{ formatSize(file.size) }}</div>
+                                                                        </div>
+                                                                        <div class="flex items-center gap-2">
+                                                                            <Badge value="Completed" severity="success" size="small" class="text-[10px] px-1 min-w-0" />
+                                                                            <Button icon="pi pi-times" @click="removeUploadedFileCallback(index)" variant="outlined" rounded severity="danger" class="!w-6 !h-6 !p-0 !rounded-md" />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                    <template #empty>
+                                                        <div class="flex items-center justify-center flex-col p-3 border-2 border-dashed border-surface-200 rounded-lg hover:bg-surface-50 transition-colors cursor-pointer" @click="chooseCallback">
+                                                            <i class="pi pi-cloud-upload text-xl text-surface-400" />
+                                                            <p class="mt-2 mb-0 text-xs text-surface-500 text-center">Przeciągnij lub kliknij</p>
+                                                        </div>
+                                                    </template>
+                                                </FileUpload>
+                                            </div>
                                         </div>
                                     </div>
                                 </AccordionContent>
@@ -554,6 +627,7 @@
                             label="Edytuj stronę" 
                             icon="pi pi-pencil" 
                             severity="primary" 
+                            class="text-[0.9rem]!"
                             @click="landingSettingsVisible = true"
                         />
 
@@ -564,12 +638,14 @@
                                 icon="pi pi-external-link" 
                                 severity="secondary" 
                                 outlined 
+                                class="text-[0.9rem]!"
                                 @click="openNewWindow" 
                             />
                             <Button 
                                 label="Zapisz" 
                                 icon="pi pi-save" 
                                 :loading="saving"
+                                class="text-[0.9rem]!"
                                 @click="saveSettings" 
                             />
                         </div>
@@ -683,6 +759,7 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Checkbox from 'primevue/checkbox';
 import { useToast } from 'primevue/usetoast';
+import { usePrimeVue } from 'primevue/config';
 import Popover from 'primevue/popover';
 import Panel from 'primevue/panel';
 import Toolbar from 'primevue/toolbar';
@@ -762,6 +839,18 @@ const downloadAndClose = (type, format) => {
     op.value.hide();
 };
 
+const publicUrl = computed(() => {
+    if (typeof window !== 'undefined') {
+        return `${window.location.origin}/feedback/demo-123`;
+    }
+    return 'https://gtrack.com/review/demo-123';
+});
+
+const copyPublicLink = () => {
+    navigator.clipboard.writeText(publicUrl.value);
+    toast.add({ severity: 'success', summary: 'Skopiowano', detail: 'Link do strony opinii skopiowany do schowka', life: 3000 });
+};
+
 // QR Code Generation
 const qrContent = computed(() => {
     if (typeof window !== 'undefined') {
@@ -830,9 +919,53 @@ const saveSettings = async () => {
     }
 };
 
-const onUpload = (event) => {
-    // Mock upload
-    toast.add({ severity: 'info', summary: 'Info', detail: 'Funkcja uploadu wymaga backendu', life: 3000 });
+const $primevue = usePrimeVue();
+
+const totalSize = ref(0);
+const totalSizePercent = ref(0);
+const files = ref([]);
+
+const onRemoveTemplatingFile = (file, removeFileCallback, index) => {
+    removeFileCallback(index);
+    totalSize.value -= parseInt(formatSize(file.size));
+    totalSizePercent.value = totalSize.value / 10;
+};
+
+const onClearTemplatingUpload = (clear) => {
+    clear();
+    totalSize.value = 0;
+    totalSizePercent.value = 0;
+};
+
+const onSelectedFiles = (event) => {
+    files.value = event.files;
+    files.value.forEach((file) => {
+        totalSize.value += parseInt(formatSize(file.size));
+    });
+};
+
+const uploadEvent = (callback) => {
+    totalSizePercent.value = totalSize.value / 10;
+    callback();
+};
+
+const onTemplatedUpload = () => {
+    toast.add({ severity: 'info', summary: 'Sukces', detail: 'Logo zostało przesłane', life: 3000 });
+};
+
+const formatSize = (bytes) => {
+    const k = 1024;
+    const dm = 3;
+    const sizes = $primevue.config.locale.fileSizeTypes;
+
+    if (bytes === 0) {
+        return `0 ${sizes[0]}`;
+    }
+
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const formattedSize = parseFloat((bytes / Math.pow(k, i)).toFixed(dm));
+
+    return `${formattedSize} ${sizes[i]}`;
 };
 
 const downloadFile = (type, format) => {

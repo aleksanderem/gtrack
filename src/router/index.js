@@ -7,6 +7,7 @@ import ReviewsDashboard from '../components/gtrack/reviews/ReviewsDashboard.vue'
 
 // Reviews sub-components
 import ReviewsOverview from '../components/gtrack/reviews/ReviewsOverview.vue';
+import ReviewsList from '../components/gtrack/reviews/ReviewsList.vue';
 import AcquisitionPanel from '../components/gtrack/reviews/AcquisitionPanel.vue';
 import InterceptedReviews from '../components/gtrack/reviews/InterceptedReviews.vue';
 import ResponseTemplates from '../components/gtrack/reviews/ResponseTemplates.vue';
@@ -49,6 +50,11 @@ const routes = [
                 name: 'reviews-overview',
                 component: ReviewsOverview,
                 props: true 
+            },
+            {
+                path: 'reviews',
+                name: 'reviews-list',
+                component: ReviewsList
             },
             {
                 path: 'acquisition',
