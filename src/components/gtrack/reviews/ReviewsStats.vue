@@ -1,10 +1,20 @@
 <template>
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
     <!-- Overall Rating -->
-    <Card class="border-0 shadow-lg overflow-hidden relative h-full" :class="scenario?.id === 'negative' ? 'bg-gradient-to-br from-red-50 to-red-100' : scenario?.id === 'neutral' ? 'bg-gradient-to-br from-yellow-50 to-orange-50' : 'bg-gradient-to-br from-blue-50 to-indigo-50'">
-      <div class="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 opacity-20" :class="scenario?.id === 'negative' ? 'bg-red-200' : scenario?.id === 'neutral' ? 'bg-yellow-200' : 'bg-blue-200'"></div>
-      <div class="absolute bottom-0 left-0 w-24 h-24 rounded-full -ml-12 -mb-12 opacity-20" :class="scenario?.id === 'negative' ? 'bg-red-300' : scenario?.id === 'neutral' ? 'bg-orange-200' : 'bg-indigo-200'"></div>
+    <Card 
+      class="border-0 shadow-lg overflow-hidden relative h-full rating-card" 
+      :class="scenario?.id === 'negative' ? 'bg-gradient-to-br from-red-50 to-red-100' : scenario?.id === 'neutral' ? 'bg-gradient-to-br from-yellow-50 to-orange-50' : 'bg-gradient-to-br from-green-50 to-emerald-50'" 
+      :pt="{
+        body: {
+          class: 'p-ripple relative',
+          style: '--p-ripple-background: rgba(34, 197, 94, 0.3); cursor: pointer; position: relative;'
+        }
+      }"
+    >
+      <div class="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 opacity-20" :class="scenario?.id === 'negative' ? 'bg-red-200' : scenario?.id === 'neutral' ? 'bg-yellow-200' : 'bg-green-200'"></div>
+      <div class="absolute bottom-0 left-0 w-24 h-24 rounded-full -ml-12 -mb-12 opacity-20" :class="scenario?.id === 'negative' ? 'bg-red-300' : scenario?.id === 'neutral' ? 'bg-orange-200' : 'bg-emerald-200'"></div>
       <template #content>
+        <div class="absolute inset-0 p-ripple" v-ripple style="--p-ripple-background: rgba(34, 197, 94, 0.3);"></div>
         <div class="flex flex-col items-center justify-center min-h-full py-6 relative z-10">
           <div class="text-5xl mb-3">{{ scenario?.emoji || '🎉' }}</div>
           <div class="flex items-baseline gap-2 mb-3">
@@ -17,7 +27,7 @@
             :cancel="false" 
             class="mb-3" 
             :pt="{ 
-              onIcon: scenario?.id === 'negative' ? 'text-red-500 text-xl' : scenario?.id === 'neutral' ? 'text-yellow-500 text-xl' : 'text-yellow-400 text-xl', 
+              onIcon: scenario?.id === 'negative' ? 'text-red-500 text-xl' : scenario?.id === 'neutral' ? 'text-yellow-500 text-xl' : 'text-green-500 text-xl', 
               offIcon: 'text-gray-300 text-xl' 
             }" 
           />
@@ -112,10 +122,11 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted, nextTick } from 'vue';
 import Card from 'primevue/card';
 import Rating from 'primevue/rating';
 import Knob from 'primevue/knob';
+import Ripple from 'primevue/ripple';
 
 const props = defineProps({
   stats: {
@@ -139,6 +150,25 @@ const ratingColorClass = computed(() => {
   if (props.scenario?.ratingColor) {
     return `${props.scenario.ratingColor.from} ${props.scenario.ratingColor.to}`;
   }
-  return 'from-blue-600 to-indigo-600';
+  return 'from-green-600 to-emerald-600';
+});
+
+onMounted(() => {
+  nextTick(() => {
+    const cardBody = document.querySelector('.rating-card .p-card-body');
+    if (cardBody && Ripple) {
+      // Apply ripple directive to card body
+      Ripple.mounted(cardBody, { value: true });
+    }
+  });
 });
 </script>
+
+<style scoped>
+/* Ensure card body is positioned relatively for absolute ripple overlay */
+:deep(.rating-card .p-card-body) {
+  position: relative !important;
+  overflow: hidden;
+}
+</style>
+

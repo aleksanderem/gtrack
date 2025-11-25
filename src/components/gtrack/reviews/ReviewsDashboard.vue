@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col h-full">
     <!-- Navigation Toolbar (Fixed Top) -->
-    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-4 shadow-sm z-10">
+    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-4 shadow-sm sticky top-0" :style="{ zIndex: 0 }">
        <div v-for="tab in tabs" :key="tab.id" class="relative flex items-center">
          <Button 
            :label="tab.label" 
@@ -21,27 +21,16 @@
            }"
          />
        </div>
-       
-       <div class="ml-auto flex gap-2">
-         <Button 
-            v-if="isTabActive('overview')"
-            label="Pozyskaj Opinie" 
-            icon="pi pi-share-alt" 
-            size="small"
-            outlined
-            @click="navigateToTab('acquisition')"
-          />
-       </div>
     </div>
 
     <!-- Scrollable Content Area -->
     <div class="flex-1 overflow-auto bg-gray-50">
-      <div class="p-6 mx-auto" :class="{ 'max-w-7xl': route.name !== 'reviews-intercepted' && route.name !== 'reviews-templates', 'w-full': route.name === 'reviews-intercepted' || route.name === 'reviews-templates' }">
+      <div class="p-6 mx-auto" :class="{ 'max-w-7xl': route.name !== 'reviews-intercepted' && route.name !== 'reviews-templates' && route.name !== 'reviews-auto-reply' && route.name !== 'reviews-auto-reply-history', 'w-full': route.name === 'reviews-intercepted' || route.name === 'reviews-templates' || route.name === 'reviews-auto-reply' || route.name === 'reviews-auto-reply-history' }">
         
         <!-- Common Header for all tabs or just specific ones -->
-        <div class="mb-4">
-           <h1 class="text-2xl font-bold text-gray-900">Opinie Klientów</h1>
-           <p class="text-gray-500">Zarządzaj reputacją swojej firmy w jednym miejscu.</p>
+        <div v-if="route.name !== 'reviews-auto-reply-history'" class="mb-4">
+           <h1 class="text-2xl font-bold text-gray-900">{{ pageTitle }}</h1>
+           <p class="text-gray-500">{{ pageDescription }}</p>
         </div>
 
         <!-- Router View for Sub-tabs -->
@@ -77,13 +66,45 @@ const tabs = [
   { id: 'reviews', label: 'Opinie', icon: 'pi pi-comments', routeName: 'reviews-list' },
   { id: 'acquisition', label: 'Pozyskiwanie Opinii', icon: 'pi pi-megaphone', routeName: 'reviews-acquisition' },
   { id: 'intercepted', label: 'Przechwycone Opinie', icon: 'pi pi-inbox', routeName: 'reviews-intercepted' },
-  { id: 'templates', label: 'Szablony Odpowiedzi', icon: 'pi pi-list', routeName: 'reviews-templates' }
+  { id: 'templates', label: 'Szablony Odpowiedzi', icon: 'pi pi-list', routeName: 'reviews-templates' },
+  { id: 'auto-reply', label: 'Auto-Odpowiedzi', icon: 'pi pi-sparkles', routeName: 'reviews-auto-reply' }
 ];
+
+const pageTitle = computed(() => {
+  const titles = {
+    'reviews-overview': 'Przegląd Opinii',
+    'reviews-list': 'Opinie',
+    'reviews-acquisition': 'Pozyskiwanie Opinii',
+    'reviews-intercepted': 'Przechwycone Opinie',
+    'reviews-templates': 'Szablony Odpowiedzi',
+    'reviews-auto-reply': 'Auto-Odpowiedzi'
+  };
+  return titles[route.name] || 'Opinie Klientów';
+});
+
+const pageDescription = computed(() => {
+  const descriptions = {
+    'reviews-overview': 'Przeglądaj statystyki i analizy dotyczące opinii klientów.',
+    'reviews-list': 'Zarządzaj opiniami klientów z różnych źródeł.',
+    'reviews-acquisition': 'Pozyskuj nowe opinie od klientów.',
+    'reviews-intercepted': 'Przeglądaj i odpowiadaj na przechwycone opinie.',
+    'reviews-templates': 'Zarządzaj szablonami odpowiedzi na opinie.',
+    'reviews-auto-reply': 'Skonfiguruj automatyczne odpowiadanie na opinie.'
+  };
+  return descriptions[route.name] || 'Zarządzaj reputacją swojej firmy w jednym miejscu.';
+});
 
 const isTabActive = (tabId) => {
     // Simple check based on route name mapping
     const mapping = tabs.find(t => t.id === tabId);
-    return mapping && route.name === mapping.routeName;
+    if (!mapping) return false;
+    
+    // Special handling for auto-reply tab (both settings and history)
+    if (tabId === 'auto-reply') {
+      return route.name === 'reviews-auto-reply' || route.name === 'reviews-auto-reply-history';
+    }
+    
+    return route.name === mapping.routeName;
 };
 
 const navigateToTab = (tabId) => {
@@ -131,3 +152,10 @@ watch(() => route.name, () => {
   loadUnreadCounts();
 });
 </script>
+
+<style scoped>
+/* Ensure PrimeVue Menubar submenu appears below the navigation toolbar */
+:deep(.p-menubar-submenu) {
+  z-index: 1000 !important;
+}
+</style>

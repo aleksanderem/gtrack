@@ -3,6 +3,7 @@ import PrimeVue from 'primevue/config'
 import { definePreset } from '@primeuix/themes'
 import Lara from '@primeuix/themes/lara'
 import Tooltip from 'primevue/tooltip'
+import Ripple from 'primevue/ripple'
 import ConfirmationService from 'primevue/confirmationservice'
 import ToastService from 'primevue/toastservice'
 import DialogService from 'primevue/dialogservice'
@@ -45,6 +46,7 @@ const app = createApp(App)
 
 app.use(router)
 app.use(PrimeVue, {
+    ripple: true,
     theme: {
         preset: LaraBlue,
         options: {
@@ -58,5 +60,6 @@ app.use(ConfirmationService)
 app.use(ToastService)
 app.use(DialogService)
 app.directive('tooltip', Tooltip)
+app.directive('ripple', Ripple)
 
 app.mount('#app')

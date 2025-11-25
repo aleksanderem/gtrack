@@ -28,3 +28,8 @@
         }
     }
 }
+
+/* Ensure PrimeVue Menubar submenu appears below ReviewsDashboard navigation */
+.p-menubar-submenu {
+    z-index: 1000 !important;
+}

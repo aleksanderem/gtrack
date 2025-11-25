@@ -451,6 +451,118 @@ const MOCK_INTERNAL_FEEDBACKS = [
   }
 ];
 
+// Mock Auto-Reply Settings
+const MOCK_AUTO_REPLY_SETTINGS = {
+  enabled: false,
+  require_approval: true,
+  email_notifications: false,
+  approval_timeout_hours: 24,
+  daily_limit: 50,
+  cooldown_days: 7,
+  max_age_days: 30,
+  response_rate_threshold: 95,
+  require_approval_for_ratings: [1, 2],
+  require_approval_keywords: ['reklamacja', 'problem', 'skarga']
+};
+
+// Mock Auto-Reply Rules
+const MOCK_AUTO_REPLY_RULES = [
+  {
+    id: 'rule_1',
+    name: 'Pozytywne opinie Google',
+    enabled: true,
+    conditions: {
+      rating: { operator: 'gte', value: 4 },
+      source: ['google'],
+      status: ['new', 'read']
+    },
+    schedule: {
+      type: 'immediate',
+      delay_minutes: 0,
+      time_window: null,
+      weekdays_only: false
+    },
+    template_selection: {
+      strategy: 'rating_match',
+      fallback_template_id: null
+    },
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString()
+  },
+  {
+    id: 'rule_2',
+    name: 'Neutralne opinie (wymaga zatwierdzenia)',
+    enabled: false,
+    conditions: {
+      rating: { operator: 'eq', value: 3 },
+      source: ['google', 'booksy', 'facebook'],
+      status: ['new', 'read']
+    },
+    schedule: {
+      type: 'delayed',
+      delay_minutes: 60,
+      time_window: null,
+      weekdays_only: true
+    },
+    template_selection: {
+      strategy: 'rating_match',
+      fallback_template_id: null
+    },
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString()
+  }
+];
+
+// Mock Auto-Reply History
+const MOCK_AUTO_REPLY_HISTORY = [
+  {
+    id: 'ar1',
+    review_id: '101',
+    review_type: 'review',
+    template_id: 't1',
+    template_name: 'Podziękowanie (Standard)',
+    rule_id: 'rule_1',
+    rule_name: 'Pozytywne opinie Google',
+    content: 'Anna Nowak, bardzo dziękujemy! Cieszymy się, że spodobały Ci się nasze usługi. Daj nam znać, jeśli będziesz potrzebować czegoś jeszcze. Życzymy wszystkiego najlepszego!',
+    status: 'sent',
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+    sent_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+    approved_by: null,
+    approved_at: null,
+    error_message: null
+  },
+  {
+    id: 'ar2',
+    review_id: 'f1',
+    review_type: 'feedback',
+    template_id: 't8',
+    template_name: 'Przeprosiny za problem',
+    rule_id: 'rule_2',
+    rule_name: 'Neutralne opinie (wymaga zatwierdzenia)',
+    content: 'Panie Janie, przepraszamy za niedogodności. Chcielibyśmy omówić szczegóły bezpośrednio - prosimy o kontakt.',
+    status: 'pending',
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
+    sent_at: null,
+    approved_by: null,
+    approved_at: null,
+    error_message: null
+  },
+  {
+    id: 'ar3',
+    review_id: '103',
+    review_type: 'review',
+    template_id: 't1',
+    template_name: 'Podziękowanie (Standard)',
+    rule_id: 'rule_1',
+    rule_name: 'Pozytywne opinie Google',
+    content: 'Klaudia B., bardzo dziękujemy! Cieszymy się, że spodobały Ci się nasze usługi.',
+    status: 'failed',
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+    sent_at: null,
+    approved_by: null,
+    approved_at: null,
+    error_message: 'API error: Rate limit exceeded'
+  }
+];
+
 // Simulation delay helper
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -458,7 +570,7 @@ export const ReviewsService = {
   async getStats(scenario = null) {
     await delay(600); // Simulate network latency
     if (!scenario) {
-      return MOCK_STATS;
+    return MOCK_STATS;
     }
     return generateStatsForScenario(scenario);
   },
@@ -1074,6 +1186,310 @@ export const ReviewsService = {
       reviewCounts,
       averageRatings,
       replyCounts
+    };
+  },
+
+  // Auto-Reply API
+  async getAutoReplySettings() {
+    await delay(500);
+    return { ...MOCK_AUTO_REPLY_SETTINGS };
+  },
+
+  async saveAutoReplySettings(settings) {
+    await delay(700);
+    MOCK_AUTO_REPLY_SETTINGS = { ...settings };
+    return MOCK_AUTO_REPLY_SETTINGS;
+  },
+
+  async getAutoReplyRules() {
+    await delay(500);
+    return [...MOCK_AUTO_REPLY_RULES];
+  },
+
+  async saveAutoReplyRule(rule) {
+    await delay(700);
+    if (rule.id) {
+      const index = MOCK_AUTO_REPLY_RULES.findIndex(r => r.id === rule.id);
+      if (index !== -1) {
+        MOCK_AUTO_REPLY_RULES[index] = { ...rule };
+        return MOCK_AUTO_REPLY_RULES[index];
+      }
+    } else {
+      rule.id = 'rule_' + Date.now();
+      rule.created_at = new Date().toISOString();
+      MOCK_AUTO_REPLY_RULES.push(rule);
+      return rule;
+    }
+    throw new Error('Rule not found');
+  },
+
+  async deleteAutoReplyRule(ruleId) {
+    await delay(500);
+    const index = MOCK_AUTO_REPLY_RULES.findIndex(r => r.id === ruleId);
+    if (index !== -1) {
+      MOCK_AUTO_REPLY_RULES.splice(index, 1);
+      return true;
+    }
+    throw new Error('Rule not found');
+  },
+
+  async getAutoReplyHistory(filters = {}) {
+    await delay(600);
+    let history = [...MOCK_AUTO_REPLY_HISTORY];
+    
+    if (filters.status) {
+      history = history.filter(h => h.status === filters.status);
+    }
+    
+    if (filters.review_type) {
+      history = history.filter(h => h.review_type === filters.review_type);
+    }
+    
+    return history.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  },
+
+  async approveAutoReply(replyId, editedContent) {
+    await delay(800);
+    const historyItem = MOCK_AUTO_REPLY_HISTORY.find(h => h.id === replyId);
+    if (!historyItem) throw new Error('Auto-reply not found');
+    
+    if (historyItem.status !== 'pending') {
+      throw new Error('Auto-reply already processed');
+    }
+    
+    // Send the reply using existing methods
+    try {
+      if (historyItem.review_type === 'review') {
+        await this.postReply(historyItem.review_id, editedContent || historyItem.content);
+      } else {
+        await this.replyToInternalFeedback(historyItem.review_id, editedContent || historyItem.content);
+      }
+      
+      historyItem.status = 'sent';
+      historyItem.sent_at = new Date().toISOString();
+      historyItem.approved_at = new Date().toISOString();
+      historyItem.content = editedContent || historyItem.content;
+      
+      return historyItem;
+    } catch (e) {
+      historyItem.status = 'failed';
+      historyItem.error_message = e.message;
+      throw e;
+    }
+  },
+
+  async cancelAutoReply(replyId) {
+    await delay(500);
+    const historyItem = MOCK_AUTO_REPLY_HISTORY.find(h => h.id === replyId);
+    if (!historyItem) throw new Error('Auto-reply not found');
+    
+    if (historyItem.status !== 'pending') {
+      throw new Error('Auto-reply already processed');
+    }
+    
+    historyItem.status = 'cancelled';
+    historyItem.cancelled_at = new Date().toISOString();
+    return historyItem;
+  },
+
+  async retryFailedReply(replyId) {
+    await delay(800);
+    const historyItem = MOCK_AUTO_REPLY_HISTORY.find(h => h.id === replyId);
+    if (!historyItem) throw new Error('Auto-reply not found');
+    
+    if (historyItem.status !== 'failed') {
+      throw new Error('Auto-reply is not in failed state');
+    }
+    
+    try {
+      if (historyItem.review_type === 'review') {
+        await this.postReply(historyItem.review_id, historyItem.content);
+      } else {
+        await this.replyToInternalFeedback(historyItem.review_id, historyItem.content);
+      }
+      
+      historyItem.status = 'sent';
+      historyItem.sent_at = new Date().toISOString();
+      historyItem.error_message = null;
+      
+      return historyItem;
+    } catch (e) {
+      historyItem.error_message = e.message;
+      throw e;
+    }
+  },
+
+  async testAutoReplyRule(ruleId, reviewId, reviewType = 'review') {
+    await delay(1000);
+    
+    // Get rule
+    const rule = MOCK_AUTO_REPLY_RULES.find(r => r.id === ruleId);
+    if (!rule) throw new Error('Rule not found');
+    
+    // Get review/feedback
+    let review;
+    if (reviewType === 'review') {
+      const reviews = await this.getReviews();
+      review = reviews.find(r => r.id === reviewId);
+    } else {
+      const feedbacks = await this.getInternalFeedbacks();
+      review = feedbacks.find(f => f.id === reviewId);
+    }
+    
+    if (!review) throw new Error('Review not found');
+    
+    // Map to feedback data format
+    const feedbackData = this.mapToFeedbackData(review, reviewType);
+    
+    // Check if rule matches
+    const matches = this.checkRuleConditions(rule, feedbackData);
+    
+    if (!matches) {
+      return { matches: false, message: 'Reguła nie pasuje do wybranej opinii' };
+    }
+    
+    // Find template
+    const templates = await this.getTemplates();
+    const template = this.selectTemplateForRule(rule, feedbackData, templates);
+    
+    if (!template) {
+      return { matches: true, template: null, message: 'Nie znaleziono pasującego szablonu' };
+    }
+    
+    // Generate preview
+    const preview = this.replaceTemplateVariables(template.content, feedbackData);
+    
+    return {
+      matches: true,
+      template: {
+        id: template.id,
+        name: template.name,
+        content: template.content
+      },
+      preview,
+      feedbackData
+    };
+  },
+
+  // Helper methods for auto-reply processing
+  mapToFeedbackData(review, type = 'review') {
+    if (type === 'review') {
+      const nameParts = (review.author_name || '').split(' ');
+      return {
+        name: nameParts[0] || '',
+        surname: nameParts.slice(1).join(' ') || '',
+        email: review.email || '',
+        phone: review.phone || '',
+        rating: review.rating,
+        date: review.date,
+        service_name: review.service_context?.service_name || '',
+        employee_name: review.service_context?.employee_name || '',
+        order_no: review.order_no || '',
+        source: review.source
+      };
+    } else {
+      return {
+        name: review.name || '',
+        surname: review.surname || '',
+        email: review.email || '',
+        phone: review.phone || '',
+        rating: review.rating,
+        date: review.date,
+        service_name: review.service_name || '',
+        employee_name: review.employee_name || '',
+        order_no: review.order_no || '',
+        source: 'internal'
+      };
+    }
+  },
+
+  checkRuleConditions(rule, feedbackData) {
+    if (!rule.enabled) return false;
+    
+    const conditions = rule.conditions || {};
+    
+    // Check rating
+    if (conditions.rating) {
+      const { operator, value } = conditions.rating;
+      const rating = feedbackData.rating;
+      
+      if (operator === 'gte' && rating < value) return false;
+      if (operator === 'lte' && rating > value) return false;
+      if (operator === 'eq' && rating !== value) return false;
+      if (operator === 'between' && (rating < value.min || rating > value.max)) return false;
+    }
+    
+    // Check source
+    if (conditions.source && conditions.source.length > 0) {
+      if (!conditions.source.includes(feedbackData.source)) return false;
+    }
+    
+    // Check status (for internal feedbacks)
+    if (conditions.status && conditions.status.length > 0) {
+      // This would need review status, but for now we'll skip
+    }
+    
+    // Check keywords
+    if (conditions.keywords && conditions.keywords.length > 0) {
+      const content = feedbackData.comment || feedbackData.content || '';
+      const hasKeyword = conditions.keywords.some(keyword => 
+        content.toLowerCase().includes(keyword.toLowerCase())
+      );
+      if (!hasKeyword) return false;
+    }
+    
+    return true;
+  },
+
+  selectTemplateForRule(rule, feedbackData, templates) {
+    const availableTemplates = templates.filter(t => 
+      t.auto_reply === true && 
+      t.active === true &&
+      this.canUseTemplate(t, feedbackData)
+    );
+    
+    if (availableTemplates.length === 0) return null;
+    
+    const strategy = rule.template_selection?.strategy || 'rating_match';
+    
+    if (strategy === 'rating_match') {
+      // Find template matching the rating
+      const matching = availableTemplates.filter(t => t.rating === feedbackData.rating);
+      return matching.length > 0 ? matching[0] : availableTemplates[0];
+    } else if (strategy === 'random') {
+      return availableTemplates[Math.floor(Math.random() * availableTemplates.length)];
+    } else {
+      // Default: first available
+      return availableTemplates[0];
+    }
+  },
+
+  async getAutoReplyStats() {
+    await delay(600);
+    const history = await this.getAutoReplyHistory();
+    const sent = history.filter(h => h.status === 'sent').length;
+    const pending = history.filter(h => h.status === 'pending').length;
+    const failed = history.filter(h => h.status === 'failed').length;
+    const total = history.length;
+    
+    // Count auto-replies from Google reviews (review_type === 'review')
+    const googleAutoReplies = history.filter(h => h.review_type === 'review' && h.status === 'sent').length;
+    
+    // Count auto-od from intercepted feedback (review_type === 'feedback')
+    const interceptedAutoReplies = history.filter(h => h.review_type === 'feedback' && h.status === 'sent').length;
+    
+    // Estimate time saved (assuming 5 minutes per reply)
+    const timeSavedMinutes = sent * 5;
+    const timeSavedHours = Math.round((timeSavedMinutes / 60) * 10) / 10;
+    
+    return {
+      total_sent: sent,
+      total_pending: pending,
+      total_failed: failed,
+      total_auto_replies: total,
+      google_auto_replies: googleAutoReplies,
+      intercepted_auto_replies: interceptedAutoReplies,
+      time_saved_hours: timeSavedHours
     };
   }
 };

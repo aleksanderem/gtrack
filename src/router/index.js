@@ -11,6 +11,8 @@ import ReviewsList from '../components/gtrack/reviews/ReviewsList.vue';
 import AcquisitionPanel from '../components/gtrack/reviews/AcquisitionPanel.vue';
 import InterceptedReviews from '../components/gtrack/reviews/InterceptedReviews.vue';
 import ResponseTemplates from '../components/gtrack/reviews/ResponseTemplates.vue';
+import AutoReplySettings from '../components/gtrack/reviews/AutoReplySettings.vue';
+import AutoReplyHistory from '../components/gtrack/reviews/AutoReplyHistory.vue';
 import PublicFeedbackView from '../views/PublicFeedbackView.vue';
 
 const routes = [
@@ -70,6 +72,16 @@ const routes = [
                 path: 'templates',
                 name: 'reviews-templates',
                 component: ResponseTemplates
+            },
+            {
+                path: 'auto-reply',
+                name: 'reviews-auto-reply',
+                component: AutoReplySettings
+            },
+            {
+                path: 'auto-reply/history',
+                name: 'reviews-auto-reply-history',
+                component: AutoReplyHistory
             }
         ]
       },

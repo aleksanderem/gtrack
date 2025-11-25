@@ -14,7 +14,8 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import Skeleton from 'primevue/skeleton';
 import ReviewsStats from './ReviewsStats.vue';
 import AIAnalysis from './AIAnalysis.vue';
@@ -28,6 +29,7 @@ const props = defineProps({
   }
 });
 
+const router = useRouter();
 const currentScenario = ref(null);
 const localStats = ref(props.stats);
 
