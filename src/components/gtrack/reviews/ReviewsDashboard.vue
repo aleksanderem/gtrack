@@ -46,6 +46,15 @@
                    :limit="interceptedLimitStatus.limit"
                />
            </div>
+
+           <!-- Limit Info for Auto-Replies (Inline) -->
+           <div v-if="route.name === 'reviews-auto-reply'" class="self-center">
+               <LimitProgressBar 
+                   label="Limit auto-odpowiedzi"
+                   :current-count="autoReplyLimitStatus.currentCount"
+                   :limit="autoReplyLimitStatus.limit"
+               />
+           </div>
         </div>
 
         <!-- Router View for Sub-tabs -->
@@ -193,6 +202,16 @@ const loadUnreadCounts = async () => {
     }).length;
     
     updateUsage('maxInterceptedPerMonth', currentMonthCount);
+
+    // Count auto-replies usage
+    const history = await ReviewsService.getAutoReplyHistory();
+    const currentMonthAutoReplies = history.filter(h => {
+      if (h.status !== 'sent') return false;
+      const d = new Date(h.sent_at || h.created_at);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    }).length;
+    
+    updateUsage('maxAutoRepliesPerMonth', currentMonthAutoReplies);
   } catch (e) {
     console.error('Failed to load unread counts', e);
   }
@@ -217,6 +236,12 @@ watch(() => route.name, () => {
 const interceptedLimitStatus = computed(() => {
   const currentUsage = usage.value.maxInterceptedPerMonth || 0;
   return getLimitStatus('interceptedReviews', 'maxInterceptedPerMonth', currentUsage);
+});
+
+// Auto-reply limit status
+const autoReplyLimitStatus = computed(() => {
+  const currentUsage = usage.value.maxAutoRepliesPerMonth || 0;
+  return getLimitStatus('autoReply', 'maxAutoRepliesPerMonth', currentUsage);
 });
 </script>
 
