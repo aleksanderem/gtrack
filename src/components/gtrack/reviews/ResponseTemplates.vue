@@ -1,6 +1,7 @@
 <template>
-    <div class="card h-full flex flex-col w-full max-w-full">
-        <DataTable v-model:filters="filters" v-model:selection="selectedTemplates" :value="templates" paginator :rows="10" dataKey="id" filterDisplay="menu" :loading="loading" size="normal" class="text-sm flex-1 w-full"
+    <Card class="h-full flex flex-col w-full max-w-full border border-gray-200 rounded-lg overflow-hidden">
+        <template #content>
+            <DataTable v-model:filters="filters" v-model:selection="selectedTemplates" :value="templates" paginator :rows="10" dataKey="id" filterDisplay="menu" :loading="loading" size="normal" class="text-sm flex-1 w-full"
             :globalFilterFields="['name', 'content', 'rating']"
             rowHover
             @row-click="onRowClick"
@@ -91,13 +92,31 @@
 
             <Column field="rating" header="Ocena" sortable style="min-width: 10rem" :showFilterMatchModes="false" :pt="{ headerContent: { class: 'font-normal' } }">
                 <template #body="{ data }">
-                    <Rating :modelValue="data.rating" :readonly="true" :cancel="false" class="text-xs" />
+                    <Rating 
+                      :modelValue="data.rating" 
+                      :readonly="true" 
+                      :cancel="false" 
+                      class="text-xs" 
+                      :pt="{ 
+                        onIcon: 'text-yellow-500', 
+                        offIcon: 'text-gray-300' 
+                      }" 
+                    />
                 </template>
                 <template #filter="{ filterModel }">
                     <Select v-model="filterModel.value" :options="ratingOptions" optionLabel="label" optionValue="value" placeholder="Wybierz ocenę" showClear size="small" :pt="{ root: { class: 'text-sm' } }">
                         <template #option="slotProps">
                             <div class="flex items-center gap-2">
-                                <Rating :modelValue="slotProps.option.value" :readonly="true" :cancel="false" class="text-xs" />
+                                <Rating 
+                                  :modelValue="slotProps.option.value" 
+                                  :readonly="true" 
+                                  :cancel="false" 
+                                  class="text-xs" 
+                                  :pt="{ 
+                                    onIcon: 'text-yellow-500', 
+                                    offIcon: 'text-gray-300' 
+                                  }" 
+                                />
                                 <span>{{ slotProps.option.label }}</span>
                             </div>
                         </template>
@@ -106,6 +125,8 @@
       </Column>
 
     </DataTable>
+        </template>
+    </Card>
 
         <!-- Template Details Drawer -->
         <Drawer v-model:visible="detailsVisible" header="Szczegóły Szablonu" position="right" class="w-full! md:w-[500px]!">
@@ -154,7 +175,17 @@
                         </div>
                         <Inplace :closable="true" @open="editingRating = selectedTemplate.rating; editingTemplateId = selectedTemplate.id; hoverRating = 0; lockedRating = 0" @close="cancelRatingEdit">
                             <template #display>
-                                <Rating :key="`rating-display-${selectedTemplate.id}-${selectedTemplate.rating}`" :modelValue="selectedTemplate.rating" :readonly="true" :cancel="false" class="text-sm p-0!" />
+                                <Rating 
+                                  :key="`rating-display-${selectedTemplate.id}-${selectedTemplate.rating}`" 
+                                  :modelValue="selectedTemplate.rating" 
+                                  :readonly="true" 
+                                  :cancel="false" 
+                                  class="text-sm p-0!" 
+                                  :pt="{ 
+                                    onIcon: 'text-yellow-500', 
+                                    offIcon: 'text-gray-300' 
+                                  }" 
+                                />
                             </template>
                             <template #content="{ closeCallback }">
                                 <BlockUI :blocked="savingRating">
@@ -433,7 +464,6 @@
             <Button label="Zastosuj" icon="pi pi-check" @click="applyBulkRating" :loading="saving" size="small" />
         </template>
     </Dialog>
-  </div>
 </template>
 
 <script setup>
@@ -454,6 +484,7 @@ import InputIcon from 'primevue/inputicon';
 import Drawer from 'primevue/drawer';
 import Inplace from 'primevue/inplace';
 import Rating from 'primevue/rating';
+import Card from 'primevue/card';
 import BlockUI from 'primevue/blockui';
 import ToggleSwitch from 'primevue/toggleswitch';
 import { useConfirm } from 'primevue/useconfirm';
@@ -1253,5 +1284,13 @@ onMounted(async () => {
 :deep(.p-toggleswitch) {
     transform: scale(0.85);
     transform-origin: left center;
+}
+
+/* DataTable header styles */
+:deep(.p-datatable-header) {
+    background: #FFF !important;
+    border: none !important;
+    padding: 0 !important;
+    padding-bottom: 0.5rem !important;
 }
 </style>

@@ -72,7 +72,7 @@
 
             <Column field="review_id" header="ID Opinii" sortable style="min-width: 8rem" :pt="{ headerContent: { class: 'font-normal' } }">
                 <template #body="{ data }">
-                    <span class="font-mono text-xs">#{{ data.review_id }}</span>
+                    <span class="font-mono text-sm">#{{ data.review_id }}</span>
                 </template>
             </Column>
 
@@ -81,7 +81,7 @@
                     <Tag 
                         :value="data.review_type === 'review' ? 'Opinia' : 'Przechwycona'" 
                         :severity="data.review_type === 'review' ? 'info' : 'secondary'"
-                        class="text-xs"
+                        class="text-sm"
                     />
                 </template>
                 <template #filter="{ filterModel }">
@@ -114,7 +114,7 @@
                     <Tag 
                         :value="getStatusLabel(data.status)" 
                         :severity="getStatusSeverity(data.status)"
-                        class="text-xs"
+                        class="text-sm"
                     />
                 </template>
                 <template #filter="{ filterModel }">
@@ -132,14 +132,14 @@
 
             <Column field="created_at" header="Utworzono" sortable style="min-width: 12rem" :pt="{ headerContent: { class: 'font-normal' } }">
                 <template #body="{ data }">
-                    <span class="text-xs text-surface-600">{{ formatDate(data.created_at, true) }}</span>
+                    <span class="text-sm text-surface-600">{{ formatDate(data.created_at, true) }}</span>
                 </template>
             </Column>
 
             <Column field="sent_at" header="Wysłano" sortable style="min-width: 12rem" :pt="{ headerContent: { class: 'font-normal' } }">
                 <template #body="{ data }">
-                    <span v-if="data.sent_at" class="text-xs text-surface-600">{{ formatDate(data.sent_at, true) }}</span>
-                    <span v-else class="text-xs text-surface-400">-</span>
+                    <span v-if="data.sent_at" class="text-sm text-surface-600">{{ formatDate(data.sent_at, true) }}</span>
+                    <span v-else class="text-sm text-surface-400">-</span>
                 </template>
             </Column>
 
@@ -150,7 +150,7 @@
                             icon="pi pi-eye" 
                             text 
                             size="small"
-                            class="action-button rounded-lg"
+                            class="action-button action-button-info"
                             @click="viewReply(data)"
                             v-tooltip.top="'Podgląd'"
                         />
@@ -160,7 +160,7 @@
                             text 
                             severity="success"
                             size="small"
-                            class="action-button rounded-lg"
+                            class="action-button action-button-success"
                             @click="approveReply(data)"
                             v-tooltip.top="'Zatwierdź'"
                         />
@@ -170,7 +170,7 @@
                             text 
                             severity="danger"
                             size="small"
-                            class="action-button rounded-lg"
+                            class="action-button action-button-danger"
                             @click="cancelReply(data)"
                             v-tooltip.top="'Anuluj'"
                         />
@@ -180,7 +180,7 @@
                             text 
                             severity="warning"
                             size="small"
-                            class="action-button rounded-lg"
+                            class="action-button action-button-warning"
                             @click="retryReply(data)"
                             v-tooltip.top="'Spróbuj ponownie'"
                         />
@@ -200,7 +200,7 @@
         >
             <div v-if="selectedReply" class="flex flex-col gap-4">
                 <div class="flex flex-col gap-2">
-                    <span class="text-xs font-semibold text-surface-500 uppercase mb-2">Informacje</span>
+                    <span class="text-sm font-semibold text-surface-500 uppercase mb-2">Informacje</span>
                     <div class="border border-surface-200 rounded-lg overflow-hidden">
                         <table class="w-full text-sm">
                             <tbody>
@@ -223,7 +223,7 @@
                                 <tr class="border-b border-surface-200">
                                     <td class="px-4 py-3 font-semibold text-surface-600 bg-surface-50">Status</td>
                                     <td class="px-4 py-3">
-                                        <Tag :value="getStatusLabel(selectedReply.status)" :severity="getStatusSeverity(selectedReply.status)" class="text-xs" />
+                                        <Tag :value="getStatusLabel(selectedReply.status)" :severity="getStatusSeverity(selectedReply.status)" class="text-sm" />
                                     </td>
                                 </tr>
                                 <tr>
@@ -236,15 +236,15 @@
                 </div>
 
                 <div class="flex flex-col gap-2">
-                    <span class="text-xs font-semibold text-surface-500 uppercase">Treść odpowiedzi</span>
+                    <span class="text-sm font-semibold text-surface-500 uppercase">Treść odpowiedzi</span>
                     <div class="p-4 bg-surface-50 border border-surface-200 rounded-lg">
                         <div class="text-sm text-surface-700 whitespace-pre-wrap">{{ selectedReply.content }}</div>
                     </div>
                 </div>
 
                 <div v-if="selectedReply.error_message" class="p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <span class="text-xs font-semibold text-red-700">Błąd:</span>
-                    <div class="text-xs text-red-600 mt-1">{{ selectedReply.error_message }}</div>
+                    <span class="text-sm font-semibold text-red-700">Błąd:</span>
+                    <div class="text-sm text-red-600 mt-1">{{ selectedReply.error_message }}</div>
                 </div>
 
                 <div v-if="selectedReply.status === 'pending'" class="flex flex-col gap-3">
@@ -530,42 +530,51 @@ onMounted(async () => {
   color: rgb(59, 130, 246) !important;
 }
 
+/* Action buttons - rounded squares with colored backgrounds */
 :deep(.action-button) {
-  background-color: rgba(0, 0, 0, 0.04) !important;
-  width: 2rem;
-  height: 2rem;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    width: 2rem !important;
+    height: 2rem !important;
+    padding: 0 !important;
+    border-radius: 0.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
-:deep(.action-button:hover) {
-  background-color: rgba(0, 0, 0, 0.08) !important;
+:deep(.action-button-info) {
+    background-color: #e6f0ff !important;
+    color: #3385ff !important;
 }
 
-:deep(.p-button-success.action-button) {
-  background-color: rgba(34, 197, 94, 0.1) !important;
+:deep(.action-button-info:hover) {
+    background-color: #d0e5ff !important;
 }
 
-:deep(.p-button-success.action-button:hover) {
-  background-color: rgba(34, 197, 94, 0.15) !important;
+:deep(.action-button-success) {
+    background-color: #e6f0ff !important;
+    color: #3385ff !important;
 }
 
-:deep(.p-button-danger.action-button) {
-  background-color: rgba(239, 68, 68, 0.1) !important;
+:deep(.action-button-success:hover) {
+    background-color: #d0e5ff !important;
 }
 
-:deep(.p-button-danger.action-button:hover) {
-  background-color: rgba(239, 68, 68, 0.15) !important;
+:deep(.action-button-danger) {
+    background-color: #fee2e2 !important;
+    color: #dc2626 !important;
 }
 
-:deep(.p-button-warning.action-button) {
-  background-color: rgba(251, 191, 36, 0.1) !important;
+:deep(.action-button-danger:hover) {
+    background-color: #fecaca !important;
 }
 
-:deep(.p-button-warning.action-button:hover) {
-  background-color: rgba(251, 191, 36, 0.15) !important;
+:deep(.action-button-warning) {
+    background-color: #fef3c7 !important;
+    color: #d97706 !important;
+}
+
+:deep(.action-button-warning:hover) {
+    background-color: #fde68a !important;
 }
 </style>
 

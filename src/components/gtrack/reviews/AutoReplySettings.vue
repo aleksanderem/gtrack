@@ -266,7 +266,16 @@
                     <div class="flex flex-col gap-3">
                         <div v-for="rating in [5, 4, 3, 2, 1]" :key="rating" class="flex items-center justify-between p-3 bg-surface-50 rounded-lg">
                             <div class="flex items-center gap-3">
-                                <Rating :modelValue="rating" :readonly="true" :cancel="false" class="text-sm" />
+                                <Rating 
+                                  :modelValue="rating" 
+                                  :readonly="true" 
+                                  :cancel="false" 
+                                  class="text-sm" 
+                                  :pt="{ 
+                                    onIcon: 'text-yellow-500', 
+                                    offIcon: 'text-gray-300' 
+                                  }" 
+                                />
                                 <div class="flex flex-col gap-1">
                                     <span class="text-sm font-semibold">
                                         {{ getAllTemplatesForRating(rating).length }} szablon{{ getAllTemplatesForRating(rating).length === 1 ? '' : getAllTemplatesForRating(rating).length < 5 ? 'y' : 'ów' }} aktywn{{ getAllTemplatesForRating(rating).length === 1 ? 'y' : 'e' }}

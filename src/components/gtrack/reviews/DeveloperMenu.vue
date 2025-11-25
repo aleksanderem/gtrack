@@ -23,7 +23,7 @@
       </div>
       
       <div class="space-y-2">
-        <div class="text-xs font-medium text-gray-500 uppercase mb-2">Scenariusz ocen</div>
+        <div class="text-sm font-medium text-gray-500 uppercase mb-2">Scenariusz ocen</div>
         
         <div 
           v-for="scenario in scenarios" 
@@ -35,7 +35,7 @@
           <div class="text-2xl">{{ scenario.emoji }}</div>
           <div class="flex-1">
             <div class="text-sm font-medium text-gray-700">{{ scenario.label }}</div>
-            <div class="text-xs text-gray-500">{{ scenario.description }}</div>
+            <div class="text-sm text-gray-500">{{ scenario.description }}</div>
           </div>
           <i v-if="activeScenario === scenario.id" class="pi pi-check text-primary"></i>
         </div>

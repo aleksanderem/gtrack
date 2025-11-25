@@ -43,7 +43,7 @@
       <div class="absolute top-0 right-0 w-28 h-28 bg-purple-200 rounded-full -mr-14 -mt-14 opacity-20"></div>
       <div class="absolute bottom-0 left-0 w-20 h-20 bg-pink-200 rounded-full -ml-10 -mb-10 opacity-20"></div>
       <template #title>
-        <div class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-4 relative z-10">Źródła Opinii</div>
+        <div class="text-sm font-bold text-gray-600 uppercase tracking-wider mb-4 relative z-10">Źródła Opinii</div>
       </template>
       <template #content>
         <div class="space-y-5 relative z-10">
@@ -75,13 +75,13 @@
       <div class="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 opacity-20" :class="scenario?.id === 'negative' ? 'bg-red-200' : scenario?.id === 'neutral' ? 'bg-yellow-200' : 'bg-green-200'"></div>
       <div class="absolute bottom-0 left-0 w-24 h-24 rounded-full -ml-12 -mb-12 opacity-20" :class="scenario?.id === 'negative' ? 'bg-pink-200' : scenario?.id === 'neutral' ? 'bg-amber-200' : 'bg-emerald-200'"></div>
       <template #title>
-        <div class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-4 relative z-10">Jakość Obsługi</div>
+        <div class="text-sm font-bold text-gray-600 uppercase tracking-wider mb-4 relative z-10">Jakość Obsługi</div>
       </template>
       <template #content>
         <div class="grid grid-rows-2 gap-4 relative z-10">
           <div class="flex items-center justify-between p-4 bg-white/70 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-sm hover:shadow-md transition-shadow">
             <div>
-              <div class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Wskaźnik Odpowiedzi</div>
+              <div class="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">Wskaźnik Odpowiedzi</div>
               <div class="text-3xl font-bold text-gray-800">{{ stats.response_rate }}%</div>
             </div>
             <Knob 
@@ -94,12 +94,12 @@
               :rangeColor="'#e5e7eb'"
               :textColor="'#6b7280'"
               readonly
-              :pt="{ value: 'text-xs', label: 'hidden' }"
+              :pt="{ value: 'text-sm', label: 'hidden' }"
             />
           </div>
           <div class="flex items-center justify-between p-4 bg-white/70 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-sm hover:shadow-md transition-shadow">
              <div>
-              <div class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Pozytywne Opinie</div>
+              <div class="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">Pozytywne Opinie</div>
               <div class="text-3xl font-bold text-gray-800">{{ stats.positive_reviews_percentage }}%</div>
             </div>
             <Knob 
@@ -112,7 +112,7 @@
               :rangeColor="'#e5e7eb'"
               :textColor="'#6b7280'"
               readonly
-              :pt="{ value: 'text-xs', label: 'hidden' }"
+              :pt="{ value: 'text-sm', label: 'hidden' }"
             />
           </div>
         </div>

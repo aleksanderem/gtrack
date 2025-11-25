@@ -1,6 +1,7 @@
 <template>
-    <div class="card h-full flex flex-col w-full max-w-full">
-        <DataTable v-model:filters="filters" :value="feedbacks" paginator :rows="10" dataKey="id" filterDisplay="menu" :loading="loading" size="normal" class="text-sm flex-1 w-full"
+    <Card class="h-full flex flex-col w-full max-w-full border border-gray-200 rounded-lg overflow-hidden">
+        <template #content>
+            <DataTable v-model:filters="filters" :value="feedbacks" paginator :rows="10" dataKey="id" filterDisplay="menu" :loading="loading" size="normal" class="text-sm flex-1 w-full"
             :globalFilterFields="['name', 'surname', 'email', 'phone', 'comment', 'service_name', 'employee_name', 'order_no']"
             rowHover
             @row-click="onRowClick"
@@ -20,7 +21,7 @@
                             <InputText v-model="filters['global'].value" placeholder="Szukaj..." size="small" />
                         </IconField>
                     </div>
-                    <Button icon="pi pi-cog" label="Kolumny" text size="small" @click="columnsDialogVisible = true" />
+                    <Button icon="pi pi-cog" label="Kolumny" text size="small" class="columns-button" @click="columnsDialogVisible = true" />
                 </div>
             </template>
             <template #empty> Nie znaleziono opinii. </template>
@@ -32,7 +33,7 @@
                         <Avatar :label="data.name.charAt(0)" shape="circle" />
                         <div class="flex flex-col">
                             <span class="font-semibold text-sm">{{ data.name }} {{ data.surname }}</span>
-                            <span class="text-xs text-surface-500">{{ data.email }}</span>
+                            <span class="text-sm text-surface-500">{{ data.email }}</span>
                         </div>
                     </div>
                 </template>
@@ -52,11 +53,20 @@
 
             <Column field="rating" header="Ocena" sortable style="min-width: 10rem" :showFilterMatchModes="false" :pt="{ headerContent: { class: 'font-normal' } }">
                 <template #body="{ data }">
-                    <Rating :modelValue="data.rating" :readonly="true" :cancel="false" class="!gap-1" :pt="{ onIcon: '!text-base', offIcon: '!text-base' }" />
+                    <Rating 
+                      :modelValue="data.rating" 
+                      :readonly="true" 
+                      :cancel="false" 
+                      class="!gap-1" 
+                      :pt="{ 
+                        onIcon: '!text-base text-yellow-500', 
+                        offIcon: '!text-base text-gray-300' 
+                      }" 
+                    />
                 </template>
                 <template #filter="{ filterModel }">
                     <Slider v-model="filterModel.value" range class="m-4" :min="1" :max="5"></Slider>
-                    <div class="flex items-center justify-between px-2 text-xs">
+                    <div class="flex items-center justify-between px-2 text-sm">
                         <span>{{ filterModel.value ? filterModel.value[0] : 1 }}</span>
                         <span>{{ filterModel.value ? filterModel.value[1] : 5 }}</span>
                     </div>
@@ -65,12 +75,12 @@
 
             <Column field="status" header="Status" sortable style="min-width: 10rem" :showFilterMatchModes="false" :pt="{ headerContent: { class: 'font-normal' } }">
                 <template #body="{ data }">
-                    <Tag :value="getStatusLabel(data.status)" :severity="getStatusSeverity(data.status)" class="text-xs font-normal" />
+                    <Tag :value="getStatusLabel(data.status)" :severity="getStatusSeverity(data.status)" class="text-sm font-normal" />
                 </template>
                 <template #filter="{ filterModel }">
                     <Select v-model="filterModel.value" :options="statuses" placeholder="Wybierz status" showClear size="small" :pt="{ root: { class: 'text-sm' } }">
                         <template #option="slotProps">
-                            <Tag :value="getStatusLabel(slotProps.option)" :severity="getStatusSeverity(slotProps.option)" class="text-xs font-normal" />
+                            <Tag :value="getStatusLabel(slotProps.option)" :severity="getStatusSeverity(slotProps.option)" class="text-sm font-normal" />
                         </template>
                     </Select>
                 </template>
@@ -95,13 +105,15 @@
             <Column :exportable="false" style="min-width: 8rem" alignFrozen="right" frozen :pt="{ headerContent: { class: 'font-normal' } }">
                 <template #body="{ data }">
                     <div class="flex gap-2">
-                        <Button icon="pi pi-envelope" text rounded severity="info" v-tooltip.top="'Odpowiedz'" size="small" @click.stop="selectedFeedback = data; openReplyDialog()" />
-                        <Button icon="pi pi-check-circle" text rounded severity="success" v-tooltip.top="'Oznacz jako przeczytane'" size="small" @click.stop="markAsRead(data)" v-if="data.status === 'new'" />
-                        <Button icon="pi pi-trash" text rounded severity="danger" v-tooltip.top="'Usuń'" size="small" @click.stop="deleteFeedback(data)" />
+                        <Button icon="pi pi-envelope" text rounded severity="info" class="action-button action-button-info" v-tooltip.top="'Odpowiedz'" size="small" @click.stop="selectedFeedback = data; openReplyDialog()" />
+                        <Button icon="pi pi-check-circle" text rounded severity="success" class="action-button action-button-success" v-tooltip.top="'Oznacz jako przeczytane'" size="small" @click.stop="markAsRead(data)" v-if="data.status === 'new'" />
+                        <Button icon="pi pi-trash" text rounded severity="danger" class="action-button action-button-danger" v-tooltip.top="'Usuń'" size="small" @click.stop="deleteFeedback(data)" />
                     </div>
                 </template>
             </Column>
         </DataTable>
+        </template>
+    </Card>
 
         <Dialog v-model:visible="columnsDialogVisible" header="Wybierz kolumny" :style="{ width: '30rem' }" modal>
             <div class="flex flex-col gap-4">
@@ -119,7 +131,7 @@
         <Dialog v-model:visible="replyDialogVisible" header="Odpowiedz na opinię" :style="{ width: '40rem' }" modal>
             <div class="flex flex-col gap-4">
                 <div v-if="selectedFeedback" class="bg-surface-50 p-3 rounded border border-surface-100 mb-2">
-                    <span class="text-xs text-surface-500 block mb-1">Komentarz klienta:</span>
+                    <span class="text-sm text-surface-500 block mb-1">Komentarz klienta:</span>
                     <p class="text-sm m-0 italic text-surface-600">{{ selectedFeedback.comment }}</p>
                 </div>
                 <div class="flex flex-col gap-2">
@@ -137,8 +149,8 @@
                     />
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-2">
                         <div class="flex items-center gap-2 mb-2">
-                            <i class="pi pi-info-circle text-blue-600 text-xs"></i>
-                            <span class="text-xs font-semibold text-blue-700">Dostępne zmienne (wpisz @ aby zobaczyć listę):</span>
+                            <i class="pi pi-info-circle text-blue-600 text-sm"></i>
+                            <span class="text-sm font-semibold text-blue-700">Dostępne zmienne (wpisz @ aby zobaczyć listę):</span>
                         </div>
                         <div class="flex flex-wrap gap-1">
                             <Button 
@@ -148,7 +160,7 @@
                                 text 
                                 size="small" 
                                 severity="secondary"
-                                class="text-xs py-1 px-2"
+                                class="text-sm py-1 px-2"
                                 @click="insertVariable(variable.key)"
                                 v-tooltip.top="variable.description"
                             />
@@ -176,31 +188,40 @@
                     <!-- Header Status -->
                     <div class="flex justify-between items-start border-b border-surface-100 pb-4">
                         <div class="flex flex-col gap-1">
-                            <span class="text-xs text-surface-500">Otrzymano: {{ formatDate(selectedFeedback.date) }}</span>
+                            <span class="text-sm text-surface-500">Otrzymano: {{ formatDate(selectedFeedback.date) }}</span>
                             <div class="flex items-center gap-2 mt-1">
                                 <span class="font-semibold text-base">ID: #{{ selectedFeedback.id }}</span>
-                                <Tag :value="getStatusLabel(selectedFeedback.status)" :severity="getStatusSeverity(selectedFeedback.status)" class="text-xs" />
+                                <Tag :value="getStatusLabel(selectedFeedback.status)" :severity="getStatusSeverity(selectedFeedback.status)" class="text-sm" />
                             </div>
                         </div>
-                        <Rating :modelValue="selectedFeedback.rating" :readonly="true" :cancel="false" class="!gap-1" :pt="{ onIcon: '!text-lg', offIcon: '!text-lg' }" />
+                        <Rating 
+                          :modelValue="selectedFeedback.rating" 
+                          :readonly="true" 
+                          :cancel="false" 
+                          class="!gap-1" 
+                          :pt="{ 
+                            onIcon: '!text-lg text-yellow-500', 
+                            offIcon: '!text-lg text-gray-300' 
+                          }" 
+                        />
                     </div>
 
                     <!-- Customer Info -->
                     <div class="flex flex-col gap-3">
-                        <span class="text-xs font-semibold text-surface-500 uppercase tracking-wider">Klient</span>
+                        <span class="text-sm font-semibold text-surface-500 uppercase tracking-wider">Klient</span>
                         <div class="flex items-center gap-4 p-3 bg-surface-50 rounded-lg border border-surface-100">
                             <Avatar :label="selectedFeedback.name.charAt(0)" size="large" shape="circle" class="!bg-primary !text-primary-contrast" />
                             <div class="flex flex-col gap-0.5">
                                 <span class="font-bold text-sm">{{ selectedFeedback.name }} {{ selectedFeedback.surname }}</span>
-                                <span class="text-xs text-surface-600" v-if="selectedFeedback.email"><i class="pi pi-envelope text-xs mr-1"></i>{{ selectedFeedback.email }}</span>
-                                <span class="text-xs text-surface-600" v-if="selectedFeedback.phone"><i class="pi pi-phone text-xs mr-1"></i>{{ selectedFeedback.phone }}</span>
+                                <span class="text-sm text-surface-600" v-if="selectedFeedback.email"><i class="pi pi-envelope text-sm mr-1"></i>{{ selectedFeedback.email }}</span>
+                                <span class="text-sm text-surface-600" v-if="selectedFeedback.phone"><i class="pi pi-phone text-sm mr-1"></i>{{ selectedFeedback.phone }}</span>
                             </div>
                         </div>
                     </div>
 
                 <!-- Feedback Content -->
                 <div class="flex flex-col gap-3">
-                    <span class="text-xs font-semibold text-surface-500 uppercase tracking-wider">Treść Opinii</span>
+                    <span class="text-sm font-semibold text-surface-500 uppercase tracking-wider">Treść Opinii</span>
                     <div class="p-4 bg-surface-0 border border-surface-200 rounded-lg shadow-sm">
                         <p class="m-0 text-sm text-surface-700 leading-relaxed whitespace-pre-line">
                             {{ selectedFeedback.comment }}
@@ -210,10 +231,10 @@
 
                 <!-- Reply Content -->
                 <div v-if="selectedFeedback.reply" class="flex flex-col gap-3">
-                    <span class="text-xs font-semibold text-surface-500 uppercase tracking-wider">Twoja Odpowiedź</span>
+                    <span class="text-sm font-semibold text-surface-500 uppercase tracking-wider">Twoja Odpowiedź</span>
                     <div class="p-4 bg-blue-50 border border-blue-100 rounded-lg shadow-sm">
                         <div class="flex justify-between items-center mb-2">
-                            <span class="text-xs font-semibold text-blue-700">{{ selectedFeedback.reply.author || 'Ty' }}</span>
+                            <span class="text-sm font-semibold text-blue-700">{{ selectedFeedback.reply.author || 'Ty' }}</span>
                             <span class="text-[10px] text-blue-500">{{ formatDate(selectedFeedback.reply.date, true) }}</span>
                         </div>
                         <p class="m-0 text-sm text-blue-800 leading-relaxed whitespace-pre-line">
@@ -226,22 +247,22 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div class="flex flex-col gap-1 p-3 bg-surface-50 rounded-lg border border-surface-100">
                             <span class="text-[10px] text-surface-500">Usługa</span>
-                            <span class="font-medium text-xs">{{ selectedFeedback.service_name || '-' }}</span>
+                            <span class="font-medium text-sm">{{ selectedFeedback.service_name || '-' }}</span>
                         </div>
                         <div class="flex flex-col gap-1 p-3 bg-surface-50 rounded-lg border border-surface-100">
                             <span class="text-[10px] text-surface-500">Pracownik</span>
-                            <span class="font-medium text-xs">{{ selectedFeedback.employee_name || '-' }}</span>
+                            <span class="font-medium text-sm">{{ selectedFeedback.employee_name || '-' }}</span>
                         </div>
                         <div class="flex flex-col gap-1 p-3 bg-surface-50 rounded-lg border border-surface-100 col-span-2">
                             <span class="text-[10px] text-surface-500">Nr Zamówienia</span>
-                            <span class="font-medium text-xs">{{ selectedFeedback.order_no || '-' }}</span>
+                            <span class="font-medium text-sm">{{ selectedFeedback.order_no || '-' }}</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Actions Footer -->
                 <div class="mt-auto pt-6 border-t border-surface-100 bg-white sticky bottom-0">
-                    <span class="text-xs font-semibold text-surface-500 uppercase tracking-wider mb-3 block">Akcje</span>
+                    <span class="text-sm font-semibold text-surface-500 uppercase tracking-wider mb-3 block">Akcje</span>
                     <div class="flex gap-2">
                         <Button label="Odpowiedz" icon="pi pi-envelope" severity="primary" outlined size="small" class="flex-1 !font-normal" @click="openReplyDialog" />
                         <Button label="Oznacz jako przeczytane" icon="pi pi-check" severity="secondary" outlined size="small" class="flex-1 !font-normal" @click="markAsRead(selectedFeedback)" :disabled="selectedFeedback.status === 'read' || selectedFeedback.status === 'replied'" />
@@ -249,7 +270,6 @@
                 </div>
             </div>
         </Drawer>
-    </div>
 </template>
 
 <script setup>
@@ -272,6 +292,7 @@ import Dialog from 'primevue/dialog';
 import Checkbox from 'primevue/checkbox';
 import Drawer from 'primevue/drawer';
 import Textarea from 'primevue/textarea';
+import Card from 'primevue/card';
 import { useConfirm } from "primevue/useconfirm";
 import { useToast } from "primevue/usetoast";
 import { useDialog } from 'primevue/usedialog';
@@ -622,5 +643,61 @@ initFilters();
 :deep(#replyMsg .-jte-editor[contenteditable="true"]),
 :deep(#replyMsg .-jte-editor[contenteditable="plaintext-only"]) {
     padding: 1rem !important;
+}
+
+/* DataTable header styles */
+:deep(.p-datatable-header) {
+    background: #FFF !important;
+    border: none !important;
+    padding: 0 !important;
+    padding-bottom: 0.5rem !important;
+}
+
+/* Columns button - always show hover background */
+:deep(.columns-button) {
+    background-color: #e6f0ff !important;
+    color: #3385ff !important;
+}
+
+:deep(.columns-button:hover) {
+    background-color: #d0e5ff !important;
+}
+
+/* Action buttons - rounded squares with colored backgrounds */
+:deep(.action-button) {
+    width: 2rem !important;
+    height: 2rem !important;
+    padding: 0 !important;
+    border-radius: 0.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+:deep(.action-button-info) {
+    background-color: #e6f0ff !important;
+    color: #3385ff !important;
+}
+
+:deep(.action-button-info:hover) {
+    background-color: #d0e5ff !important;
+}
+
+:deep(.action-button-success) {
+    background-color: #e6f0ff !important;
+    color: #3385ff !important;
+}
+
+:deep(.action-button-success:hover) {
+    background-color: #d0e5ff !important;
+}
+
+:deep(.action-button-danger) {
+    background-color: #fee2e2 !important;
+    color: #dc2626 !important;
+}
+
+:deep(.action-button-danger:hover) {
+    background-color: #fecaca !important;
 }
 </style>

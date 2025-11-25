@@ -26,7 +26,7 @@
             
             <!-- Key Insights from Analysis -->
             <div v-if="elementsAnalysis?.insights && elementsAnalysis.insights.length > 0" class="mb-5">
-              <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+              <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
                 Kluczowe wnioski z analizy opinii
               </h4>
               <div class="space-y-2.5">
@@ -64,7 +64,7 @@
               
             <!-- Sentiment Summary -->
             <div v-if="sentimentAnalysis" class="mb-5">
-              <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+              <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
                 Podsumowanie sentymentu
               </h4>
               <div class="grid grid-cols-3 gap-3">
@@ -79,9 +79,9 @@
                     rangeColor="#e5e7eb"
                     :textColor="'#6b7280'"
                     readonly
-                    :pt="{ value: 'text-xs font-semibold', label: 'hidden' }"
+                    :pt="{ value: 'text-sm font-semibold', label: 'hidden' }"
                   />
-                  <div class="text-xs text-gray-500 mt-2">Pozytywne</div>
+                  <div class="text-sm text-gray-500 mt-2">Pozytywne</div>
                 </div>
                 <div class="bg-white rounded-lg p-4 border border-gray-100 flex flex-col items-center">
                   <Knob 
@@ -94,9 +94,9 @@
                     rangeColor="#e5e7eb"
                     :textColor="'#6b7280'"
                     readonly
-                    :pt="{ value: 'text-xs font-semibold', label: 'hidden' }"
+                    :pt="{ value: 'text-sm font-semibold', label: 'hidden' }"
                   />
-                  <div class="text-xs text-gray-500 mt-2">Neutralne</div>
+                  <div class="text-sm text-gray-500 mt-2">Neutralne</div>
                 </div>
                 <div class="bg-white rounded-lg p-4 border border-gray-100 flex flex-col items-center">
                   <Knob 
@@ -109,28 +109,28 @@
                     rangeColor="#e5e7eb"
                     :textColor="'#6b7280'"
                     readonly
-                    :pt="{ value: 'text-xs font-semibold', label: 'hidden' }"
+                    :pt="{ value: 'text-sm font-semibold', label: 'hidden' }"
                   />
-                  <div class="text-xs text-gray-500 mt-2">Negatywne</div>
+                  <div class="text-sm text-gray-500 mt-2">Negatywne</div>
                 </div>
               </div>
             </div>
               
             <!-- Best Practices -->
             <div>
-              <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+              <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
                 Najlepsze praktyki dla Twojej sytuacji
               </h4>
-              <TabView :pt="{ nav: { class: 'text-xs' }, tab: { class: 'text-xs' }, tabTitle: { class: 'text-xs font-semibold text-gray-500 uppercase tracking-wide' } }">
+              <TabView :pt="{ nav: { class: 'text-sm' }, tab: { class: 'text-sm' }, tabTitle: { class: 'text-sm font-semibold text-gray-500 uppercase tracking-wide' } }">
                 <TabPanel v-for="practice in getBestPractices()" :key="practice.title" :header="practice.title">
                   <div class="py-2">
                     <p class="text-sm text-gray-600 leading-relaxed mb-3">{{ practice.description }}</p>
                     <div class="bg-gray-50 rounded-md p-2.5 border-l-2" :class="getWhyBorderClass()">
                       <div class="flex items-start gap-2">
-                        <i class="pi pi-info-circle text-xs text-gray-500 mt-0.5"></i>
+                        <i class="pi pi-info-circle text-sm text-gray-500 mt-0.5"></i>
                         <div>
-                          <span class="text-xs font-medium text-gray-700 block mb-0.5">Dlaczego to ważne</span>
-                          <span class="text-xs text-gray-600 leading-relaxed">{{ practice.why }}</span>
+                          <span class="text-sm font-medium text-gray-700 block mb-0.5">Dlaczego to ważne</span>
+                          <span class="text-sm text-gray-600 leading-relaxed">{{ practice.why }}</span>
                         </div>
                       </div>
                     </div>
@@ -245,7 +245,7 @@
                 :key="keyword.word"
                 :value="keyword.word"
                 severity="secondary"
-                class="text-xs"
+                class="text-sm"
               >
                 <template #value>
                   {{ keyword.word }} ({{ keyword.count }})

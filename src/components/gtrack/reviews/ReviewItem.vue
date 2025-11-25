@@ -29,7 +29,15 @@
             </div>
           </div>
           <div class="flex flex-col items-end">
-            <Rating :modelValue="review.rating" readonly :cancel="false" />
+            <Rating 
+              :modelValue="review.rating" 
+              readonly 
+              :cancel="false" 
+              :pt="{ 
+                onIcon: 'text-yellow-500', 
+                offIcon: 'text-gray-300' 
+              }" 
+            />
             <div v-if="review.service_context" class="mt-1 text-xs text-gray-400">
               <i class="pi pi-cut mr-1"></i>
               {{ review.service_context.service_name }} 

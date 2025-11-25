@@ -90,6 +90,7 @@
             icon="pi pi-plus" 
             severity="secondary" 
             rounded 
+            class="action-button action-button-info"
             aria-label="Wybierz szablon"
             @click.stop="selectTemplate(data)"
             v-tooltip.top="'Wybierz szablon'"
@@ -266,5 +267,25 @@ onMounted(() => {
     font-size: 0.875rem !important;
     line-height: 1.5rem !important;
     min-height: auto !important;
+}
+
+/* Action buttons - rounded squares with colored backgrounds */
+:deep(.action-button) {
+    width: 2rem !important;
+    height: 2rem !important;
+    padding: 0 !important;
+    border-radius: 0.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+:deep(.action-button-info) {
+    background-color: #e6f0ff !important;
+    color: #3385ff !important;
+}
+
+:deep(.action-button-info:hover) {
+    background-color: #d0e5ff !important;
 }
 </style>
