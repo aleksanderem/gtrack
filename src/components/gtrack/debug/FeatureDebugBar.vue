@@ -35,6 +35,15 @@
             v-tooltip.top="'Odśwież'"
           />
           <Button 
+            icon="pi pi-trash" 
+            text 
+            size="small" 
+            severity="danger"
+            @click="clearConfiguration"
+            v-tooltip.top="'Wyczyść konfigurację i załaduj domyślne wartości'"
+            label="Wyczyść"
+          />
+          <Button 
             icon="pi pi-times" 
             text 
             size="small" 
@@ -111,7 +120,24 @@
             </Column>
             <Column field="limits" header="Limity" style="min-width: 300px">
               <template #body="slotProps">
-                <div v-if="Object.keys(slotProps.node.data.limits || {}).length > 0" class="space-y-2">
+                <!-- Frequency node: Show toggles for each plan -->
+                <div v-if="slotProps.node.data.type === 'frequency'" class="flex items-center gap-3">
+                  <div 
+                    v-for="plan in planOptions" 
+                    :key="plan.value"
+                    class="flex items-center gap-2"
+                  >
+                    <InputSwitch 
+                      :modelValue="isFrequencyEnabledForPlan(slotProps.node.data, plan.value)"
+                      @update:modelValue="(val) => toggleFrequencyForPlan(slotProps.node.data, plan.value, val)"
+                      size="small"
+                    />
+                    <Badge :value="plan.label" severity="secondary" class="text-[9px] px-1" />
+                  </div>
+                </div>
+                
+                <!-- Regular feature node: Show limits -->
+                <div v-else-if="Object.keys(slotProps.node.data.limits || {}).length > 0" class="space-y-2">
                   <div 
                     v-for="(limitValue, limitKey) in slotProps.node.data.limits" 
                     :key="limitKey"
@@ -267,10 +293,10 @@ import TreeTable from 'primevue/treetable';
 import Column from 'primevue/column';
 import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
-import { useFeatureFlags, FEATURES } from '../../../composables/useFeatureFlags';
+import { useFeatures } from '../../../composables/useFeatures';
 import { useFeatureSettings } from '../../../stores/featureSettings';
 import { useLocationData } from '../../../composables/useLocationData';
-import { FEATURE_HIERARCHY, convertHierarchyToTreeNodes, isFeatureAvailableInPlan } from '../../../composables/featureHierarchy';
+import { FEATURES, getFeatureHierarchy, PLAN_LEVELS, PLAN_NAMES } from '../../../config/features';
 
 const visible = ref(false);
 
@@ -281,16 +307,12 @@ const toggleVisible = () => {
 
 const route = useRoute();
 const toast = useToast();
-const { isFeatureLocked: isFeatureLockedOriginal, FEATURES: ORIGINAL_FEATURES } = useFeatureFlags();
-const { featureSettings, subscription, updateFeature: updateGlobalFeature, updateSubscription } = useFeatureSettings();
+const { can, isLocked, features, currentPlanLevel } = useFeatures();
+const { featureSettings, subscription, updateFeature: updateGlobalFeature, updateSubscription, saveSettings } = useFeatureSettings();
 const { location, keywords, gridConfig, trafficSummary, trafficSources } = useLocationData();
 
 // Plan hierarchy
-const PLAN_HIERARCHY = {
-  basic: 1,
-  professional: 2,
-  enterprise: 3
-};
+const PLAN_HIERARCHY = PLAN_LEVELS;
 
 // Local copy of feature plans (requiredPlan) for editing
 const loadFeaturePlans = () => {
@@ -305,7 +327,7 @@ const loadFeaturePlans = () => {
   // Default plans from FEATURES
   const defaultPlans = {};
   Object.values(FEATURES).forEach(feature => {
-    defaultPlans[feature.key] = feature.requiredPlan;
+    defaultPlans[feature.id] = feature.requiredPlan;
   });
   return defaultPlans;
 };
@@ -327,14 +349,16 @@ const loadFeatureLimits = () => {
 
 const localFeatureLimits = ref(loadFeatureLimits());
 
-// Save feature plans to localStorage
-const saveFeaturePlans = () => {
+// Save feature plans to localStorage and refresh store
+const saveFeaturePlans = async () => {
   localStorage.setItem('featurePlans', JSON.stringify(localFeaturePlans.value));
+  await refreshSettings();
 };
 
-// Save feature limits to localStorage
-const saveFeatureLimits = () => {
+// Save feature limits to localStorage and refresh store
+const saveFeatureLimits = async () => {
   localStorage.setItem('featureLimits', JSON.stringify(localFeatureLimits.value));
+  await refreshSettings();
 };
 
 // Custom isFeatureLocked that uses local plans
@@ -383,7 +407,70 @@ const featureTreeNodes = computed(() => {
   // Access trigger to force reactivity
   featurePlansTrigger.value;
   
-  const nodes = convertHierarchyToTreeNodes(FEATURE_HIERARCHY, subscription.value.plan);
+  // Use getFeatureHierarchy from config
+  const hierarchy = getFeatureHierarchy();
+  
+  const convertToNodes = (items) => {
+    return Object.values(items).map(feature => {
+      const key = feature.id;
+      
+      // Add child nodes for availableFrequencies
+      const childNodes = [];
+      if (feature.availableFrequencies) {
+        // Get all unique frequency values across all plans
+        const allFrequencies = new Set();
+        Object.values(feature.availableFrequencies).forEach(freqs => {
+          freqs.forEach(freq => allFrequencies.add(freq));
+        });
+        
+        // Create child node for each frequency showing which plans support it
+        allFrequencies.forEach(frequency => {
+          const supportingPlans = [];
+          Object.entries(feature.availableFrequencies).forEach(([plan, freqs]) => {
+            if (freqs.includes(frequency)) {
+              supportingPlans.push(PLAN_NAMES[plan]);
+            }
+          });
+          
+          childNodes.push({
+            key: `${key}.frequency.${frequency}`,
+            data: {
+              key: `${key}.frequency.${frequency}`,
+              label: frequency.charAt(0).toUpperCase() + frequency.slice(1),
+              requiredPlan: null,
+              planName: null,
+              description: `Available for: ${supportingPlans.join(', ')}`,
+              icon: 'pi pi-check-circle',
+              type: 'frequency',
+              parentKey: key,
+              frequencyValue: frequency,
+              supportingPlans: supportingPlans
+            },
+            children: []
+          });
+        });
+      }
+      
+      const node = {
+        key,
+        data: {
+          key,
+          label: feature.label || key,
+          icon: feature.icon,
+          requiredPlan: feature.requiredPlan,
+          planName: PLAN_NAMES[feature.requiredPlan],
+          limits: feature.limits || {},
+          description: feature.description,
+          availableFrequencies: feature.availableFrequencies,
+          type: 'feature'
+        },
+        children: feature.children ? [...childNodes, ...convertToNodes(feature.children)] : childNodes
+      };
+      return node;
+    });
+  };
+
+  const nodes = convertToNodes(hierarchy);
   
   // Apply overrides from localStorage
   const applyOverrides = (nodeList) => {
@@ -398,7 +485,7 @@ const featureTreeNodes = computed(() => {
       // Override plan
       if (savedPlan) {
         newNode.data.requiredPlan = savedPlan;
-        newNode.data.planName = savedPlan === 'basic' ? 'Basic' : savedPlan === 'professional' ? 'Professional' : 'Enterprise';
+        newNode.data.planName = PLAN_NAMES[savedPlan];
       }
       
       // Override limits
@@ -430,19 +517,7 @@ const selectedPlans = ref({});
 
 // Find feature in hierarchy (including children)
 const findFeatureInHierarchy = (key) => {
-  for (const feature of Object.values(FEATURE_HIERARCHY)) {
-    if (feature.key === key) {
-      return feature;
-    }
-    if (feature.children) {
-      for (const child of Object.values(feature.children)) {
-        if (child.key === key) {
-          return child;
-        }
-      }
-    }
-  }
-  return null;
+  return features[key] || null;
 };
 
 // Get node plan (with override) - make it reactive
@@ -501,7 +576,7 @@ const updateNodePlan = async (key, plan) => {
   }
   localFeaturePlans.value[key] = plan;
   selectedPlans.value[key] = plan; // Update selectedPlans immediately
-  saveFeaturePlans();
+  await saveFeaturePlans();
   
   // Force reactivity update
   featurePlansTrigger.value++;
@@ -518,7 +593,6 @@ const isNodeLocked = (nodeData) => {
   const savedPlan = localFeaturePlans.value[nodeData.key];
   const requiredPlan = savedPlan || nodeData.requiredPlan;
   if (!requiredPlan) return false;
-  const PLAN_HIERARCHY = { basic: 1, professional: 2, enterprise: 3 };
   const requiredLevel = PLAN_HIERARCHY[requiredPlan] || 0;
   const currentLevel = PLAN_HIERARCHY[subscription.value.plan] || 0;
   return currentLevel < requiredLevel;
@@ -554,7 +628,7 @@ const getLimitValue = (featureKey, limitKey, plan) => {
 };
 
 // Update limit value
-const updateLimitValue = (featureKey, limitKey, plan, value) => {
+const updateLimitValue = async (featureKey, limitKey, plan, value) => {
   if (!localFeatureLimits.value[featureKey]) {
     localFeatureLimits.value[featureKey] = {};
   }
@@ -562,7 +636,59 @@ const updateLimitValue = (featureKey, limitKey, plan, value) => {
     localFeatureLimits.value[featureKey][limitKey] = {};
   }
   localFeatureLimits.value[featureKey][limitKey][plan] = value;
-  saveFeatureLimits();
+  await saveFeatureLimits();
+};
+
+// Check if frequency is enabled for a specific plan
+const isFrequencyEnabledForPlan = (frequencyNode, plan) => {
+  const parentKey = frequencyNode.parentKey;
+  const frequency = frequencyNode.frequencyValue;
+  
+  // Check localStorage override first
+  if (localFeatureFrequencies.value[parentKey]?.[plan]) {
+    return localFeatureFrequencies.value[parentKey][plan].includes(frequency);
+  }
+  
+  // Fall back to default from config
+  const parentFeature = FEATURES[parentKey];
+  return parentFeature?.availableFrequencies?.[plan]?.includes(frequency) || false;
+};
+
+// Toggle frequency for a plan
+const toggleFrequencyForPlan = (frequencyNode, plan, enabled) => {
+  const parentKey = frequencyNode.parentKey;
+  const frequency = frequencyNode.frequencyValue;
+  
+  if (!localFeatureFrequencies.value[parentKey]) {
+    localFeatureFrequencies.value[parentKey] = {};
+  }
+  
+  if (!localFeatureFrequencies.value[parentKey][plan]) {
+    // Initialize with current config values
+    const parentFeature = FEATURES[parentKey];
+    localFeatureFrequencies.value[parentKey][plan] = [...(parentFeature?.availableFrequencies?.[plan] || [])];
+  }
+  
+  const currentFreqs = localFeatureFrequencies.value[parentKey][plan];
+  
+  if (enabled && !currentFreqs.includes(frequency)) {
+    currentFreqs.push(frequency);
+  } else if (!enabled) {
+    const index = currentFreqs.indexOf(frequency);
+    if (index > -1) {
+      currentFreqs.splice(index, 1);
+    }
+  }
+  
+  saveFeatureFrequencies();
+  featurePlansTrigger.value++; // Trigger reactivity
+};
+
+// Save frequencies to localStorage
+const localFeatureFrequencies = ref(JSON.parse(localStorage.getItem('featureFrequencies') || '{}'));
+
+const saveFeatureFrequencies = () => {
+  localStorage.setItem('featureFrequencies', JSON.stringify(localFeatureFrequencies.value));
 };
 
 // Format limit key for display
@@ -584,27 +710,23 @@ const formatLimitKey = (key) => {
 
 // Create feature list with dynamic requiredPlan from localStorage (for backward compatibility)
 const featureList = computed(() => {
-  return [
-    { feature: FEATURES.AUTO_REPLY, configKey: 'autoReply' },
-    { feature: FEATURES.PHOTO_MONITORING, configKey: 'syncPhotos' },
-    { feature: FEATURES.POST_PUBLISHING, configKey: 'autoPost' },
-    { feature: FEATURES.DATA_PROTECTION, configKey: 'protectData' },
-    { feature: FEATURES.QA_MONITORING, configKey: 'monitorQA' },
-    { feature: FEATURES.HOURS_SYNC, configKey: 'syncHours' }
-  ].map(item => {
+  return Object.values(FEATURES).map(feature => {
     // Override requiredPlan from localStorage if available
-    const savedPlan = localFeaturePlans.value[item.configKey];
+    const savedPlan = localFeaturePlans.value[feature.id];
     if (savedPlan) {
       return {
-        ...item,
         feature: {
-          ...item.feature,
+          ...feature,
           requiredPlan: savedPlan,
-          planName: savedPlan === 'basic' ? 'Basic' : savedPlan === 'professional' ? 'Professional' : 'Enterprise'
-        }
+          planName: PLAN_NAMES[savedPlan]
+        },
+        configKey: feature.id
       };
     }
-    return item;
+    return {
+      feature: feature,
+      configKey: feature.id
+    };
   });
 });
 
@@ -638,8 +760,16 @@ const saveAllSettings = () => {
   });
 };
 
-// Reset to default settings
+// Reset to default settings - clears localStorage and reloads defaults from debug bar
 const resetToDefaults = () => {
+  // Clear all localStorage items related to configuration
+  localStorage.removeItem('featureSettings');
+  localStorage.removeItem('subscription');
+  localStorage.removeItem('featurePlans');
+  localStorage.removeItem('featureLimits');
+  localStorage.removeItem('featureUsage');
+  localStorage.removeItem('featureFrequencies');
+  
   // Reset feature plans to defaults from FEATURE_HIERARCHY
   const defaultPlans = {};
   const defaultLimits = {};
@@ -648,53 +778,112 @@ const resetToDefaults = () => {
   const collectDefaults = (hierarchy) => {
     Object.values(hierarchy).forEach(feature => {
       if (feature.requiredPlan) {
-        defaultPlans[feature.key] = feature.requiredPlan;
+        defaultPlans[feature.id] = feature.requiredPlan;
       }
       if (feature.limits) {
-        defaultLimits[feature.key] = { ...feature.limits };
+        defaultLimits[feature.id] = { ...feature.limits };
       }
       
       if (feature.children) {
-        Object.values(feature.children).forEach(child => {
-          if (child.requiredPlan) {
-            defaultPlans[child.key] = child.requiredPlan;
-          }
-          if (child.limits) {
-            defaultLimits[child.key] = { ...child.limits };
-          }
-        });
+        collectDefaults(feature.children);
       }
     });
   };
   
-  collectDefaults(FEATURE_HIERARCHY);
+  collectDefaults(getFeatureHierarchy());
   
-  // Reset to defaults
+  // Reset local state to defaults
   localFeaturePlans.value = defaultPlans;
   localFeatureLimits.value = defaultLimits;
   
-  // Save to localStorage
-  saveFeaturePlans();
-  saveFeatureLimits();
+  // Reset feature settings to defaults (all enabled)
+  const defaultFeatureSettings = {};
+  Object.keys(FEATURES).forEach(key => {
+    defaultFeatureSettings[key] = true; // All features enabled by default
+  });
   
-  // Also reset feature settings to defaults
-  const defaultFeatureSettings = {
-    autoReply: false,
-    syncPhotos: true,
-    autoPost: false,
-    protectData: true,
-    monitorQA: false,
-    syncHours: false
-  };
   localFeatureSettings.value = { ...defaultFeatureSettings };
   
   // Reset subscription plan
   currentPlan.value = 'basic';
   
+  // Clear usage
+  const defaultUsage = {
+    maxReviewsPerPage: 0,
+    maxTemplates: 0,
+    maxAnalysisPerMonth: 0,
+    maxAutoRepliesPerMonth: 0,
+    maxRules: 0,
+    maxInterceptedPerMonth: 0,
+    maxCampaigns: 0,
+    maxPhotosPerMonth: 0,
+    maxScheduledPosts: 0,
+    maxQuestionsPerMonth: 0
+  };
+  
+  // Clear frequencies
+  localFeatureFrequencies.value = {};
+  
+  // Save all defaults to localStorage
+  saveFeaturePlans();
+  saveFeatureLimits();
+  saveSettings(defaultFeatureSettings);
+  updateSubscription('basic');
+  localStorage.setItem('featureUsage', JSON.stringify(defaultUsage));
+  localStorage.setItem('featureFrequencies', JSON.stringify({}));
+  
+  // Refresh settings to sync with global store
+  refreshSettings();
+  
   toast.add({
     severity: 'info',
     summary: 'Przywrócono',
-    detail: 'Ustawienia zostały przywrócone do wartości domyślnych',
+    detail: 'Ustawienia zostały przywrócone do wartości domyślnych i localStorage został wyczyszczony',
+    life: 3000
+  });
+};
+
+// Clear configuration and reload current values from debug bar to localStorage
+const clearConfiguration = () => {
+  // Clear all localStorage items related to configuration
+  localStorage.removeItem('featureSettings');
+  localStorage.removeItem('subscription');
+  localStorage.removeItem('featurePlans');
+  localStorage.removeItem('featureLimits');
+  localStorage.removeItem('featureUsage');
+  localStorage.removeItem('featureFrequencies');
+  
+  // Save CURRENT values from debug bar to localStorage (not defaults!)
+  // This loads what's currently displayed in the debug bar
+  saveFeaturePlans();
+  saveFeatureLimits();
+  saveSettings(localFeatureSettings.value);
+  updateSubscription(currentPlan.value);
+  
+  // Clear usage and frequencies
+  const defaultUsage = {
+    maxReviewsPerPage: 0,
+    maxTemplates: 0,
+    maxAnalysisPerMonth: 0,
+    maxAutoRepliesPerMonth: 0,
+    maxRules: 0,
+    maxInterceptedPerMonth: 0,
+    maxCampaigns: 0,
+    maxPhotosPerMonth: 0,
+    maxScheduledPosts: 0,
+    maxQuestionsPerMonth: 0
+  };
+  localStorage.setItem('featureUsage', JSON.stringify(defaultUsage));
+  localStorage.setItem('featureFrequencies', JSON.stringify({}));
+  localFeatureFrequencies.value = {};
+  
+  // Refresh settings to sync with global store
+  refreshSettings();
+  
+  toast.add({
+    severity: 'success',
+    summary: 'Wyczyszczono',
+    detail: 'Konfiguracja została wyczyszczona i załadowana z debug bara',
     life: 3000
   });
 };
@@ -782,12 +971,24 @@ const windowLocationData = computed(() => ({
   hash: typeof window !== 'undefined' ? window.location.hash : null
 }));
 
+// Helper to get default feature settings (all enabled)
+const getDefaultFeatureSettings = () => {
+  const defaults = {};
+  Object.keys(FEATURES).forEach(key => {
+    defaults[key] = true; // All features enabled by default
+  });
+  return defaults;
+};
+
 const allFeaturesConfig = computed(() => {
   const config = {};
+  const defaults = getDefaultFeatureSettings();
   featureList.value.forEach(item => {
     config[item.configKey] = {
       ...item.feature,
-      enabled: featureSettings.value && featureSettings.value[item.configKey] || false,
+      enabled: featureSettings.value && featureSettings.value[item.configKey] !== undefined 
+        ? featureSettings.value[item.configKey] 
+        : (defaults[item.configKey] || true), // Default to true if not set
       locked: isFeatureLocked(item.feature)
     };
   });

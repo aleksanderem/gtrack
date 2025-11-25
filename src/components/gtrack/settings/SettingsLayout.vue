@@ -24,7 +24,7 @@ import { computed } from 'vue'
 import SettingsNavigation from './SettingsNavigation.vue'
 
 const props = defineProps({
-  title: { type: String, default: 'Settings' },
+  title: { type: String, default: '' },
   subtitle: { type: String, default: '' },
   items: { type: Array, default: () => [] },
   navTitle: { type: String, default: 'Navigation' },

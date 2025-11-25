@@ -36,13 +36,54 @@
       <div class="flex-1 min-w-[240px] order-2 h-[52px] flex items-center">
         <Menubar :model="menuItems" class="border-none bg-transparent p-0 w-full" :pt="{ root: { class: 'bg-transparent border-none p-0' }, menu: { class: 'gap-1' } }">
             <template #item="{ item, props, hasSubmenu }">
-                <a v-ripple class="flex items-center cursor-pointer px-4 py-2 rounded-lg transition-colors text-sm font-medium" 
-                   :class="activeTab === item.id ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:bg-gray-50'"
-                   v-bind="props.action">
+                <a 
+                  v-ripple 
+                  class="flex items-center cursor-pointer px-4 py-2 rounded-lg transition-colors text-sm font-medium relative" 
+                  :class="[
+                    activeTab === item.id ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:bg-gray-50',
+                    item.featureKey && isLocked(item.featureKey) ? 'opacity-60' : ''
+                  ]"
+                  v-bind="props.action"
+                >
                     <span :class="[item.icon, 'text-base leading-normal mr-2']" />
                     <span>{{ item.label }}</span>
                     <i v-if="hasSubmenu" class="pi pi-angle-down ml-2 text-xs"></i>
+                    <span 
+                      v-if="item.featureKey && isLocked(item.featureKey)" 
+                      class="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-700 border border-purple-200"
+                      title="Wymaga wyższej licencji"
+                    >
+                      <i class="pi pi-lock text-[8px]"></i>
+                      <span>{{ getPlanName(item.featureKey) }}</span>
+                    </span>
                 </a>
+            </template>
+            <template #submenu="{ item }">
+              <div class="bg-white border border-gray-200 rounded-xl shadow-xl py-1 min-w-[200px]">
+                <a
+                  v-for="subItem in item.items"
+                  :key="subItem.id"
+                  v-ripple
+                  class="flex items-center justify-between px-4 py-2.5 text-sm transition-colors relative"
+                  :class="[
+                    activeTab === subItem.id ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50',
+                    subItem.featureKey && isLocked(subItem.featureKey) ? 'opacity-60' : ''
+                  ]"
+                >
+                  <div class="flex items-center gap-2">
+                    <i :class="[subItem.icon, 'text-base']"></i>
+                    <span>{{ subItem.label }}</span>
+                  </div>
+                  <span 
+                    v-if="subItem.featureKey && isLocked(subItem.featureKey)" 
+                    class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-700 border border-purple-200"
+                    title="Wymaga wyższej licencji"
+                  >
+                    <i class="pi pi-lock text-[8px]"></i>
+                    <span>{{ getPlanName(subItem.featureKey) }}</span>
+                  </span>
+                </a>
+              </div>
             </template>
         </Menubar>
       </div>
@@ -86,6 +127,10 @@
 import { ref, computed, defineProps, defineEmits } from 'vue'
 import Select from 'primevue/select'
 import Menubar from 'primevue/menubar'
+import { useRouter } from 'vue-router'
+import { useFeatures } from '../../composables/useFeatures'
+import { useFeatureSettings } from '../../stores/featureSettings'
+import { PLAN_NAMES } from '../../config/features'
 
 const props = defineProps({
   activeTab: {
@@ -103,67 +148,127 @@ const props = defineProps({
   isLoadingReport: {
     type: Boolean,
     default: false
+  },
+  businessConfig: {
+    type: Object,
+    default: () => ({})
   }
 })
 
 const emit = defineEmits(['update:activeTab', 'update:selectedReport', 'generate-pdf', 'generate-csv'])
+const router = useRouter()
+const { isLocked, features } = useFeatures()
+const { featureSettings } = useFeatureSettings()
 
-const menuItems = ref([
-  { 
-    id: 'map', 
-    label: 'Mapa', 
-    icon: 'pi pi-map',
-    command: () => emit('update:activeTab', 'map')
-  },
-  {
-    label: 'Zarządzanie',
-    icon: 'pi pi-briefcase',
-    items: [
-      { 
-        id: 'reviews', 
-        label: 'Opinie', 
-        icon: 'pi pi-star',
-        command: () => emit('update:activeTab', 'reviews')
-      },
-      { 
-        id: 'posts', 
-        label: 'Posty', 
-        icon: 'pi pi-pencil',
-        command: () => emit('update:activeTab', 'posts')
-      },
-      { 
-        id: 'content', 
-        label: 'Wizytówka', 
-        icon: 'pi pi-id-card',
-        command: () => emit('update:activeTab', 'content')
-      }
-    ]
-  },
-  {
-    label: 'Raporty',
-    icon: 'pi pi-chart-bar',
-    items: [
-      { 
-        id: 'keywords', 
-        label: 'Pozycje', 
-        icon: 'pi pi-list',
-        command: () => emit('update:activeTab', 'keywords')
-      },
-      { 
-        id: 'comparison', 
-        label: 'Konkurencja', 
-        icon: 'pi pi-users',
-        command: () => emit('update:activeTab', 'comparison')
-      }
-    ]
-  },
-  { 
-    id: 'settings', 
-    label: 'Ustawienia', 
-    icon: 'pi pi-cog',
-    command: () => emit('update:activeTab', 'settings')
+const navigateToFeatureSettings = (featureKey) => {
+  // Logic to navigate to settings or show upgrade modal
+  // For now, we can just emit an event or log
+  console.log('Navigate to settings for feature:', featureKey)
+  emit('update:activeTab', 'settings')
+}
+
+const createCommand = (item, featureKey) => {
+  return () => {
+    if (featureKey && isLocked(featureKey)) {
+      // Navigate to settings instead
+      navigateToFeatureSettings(featureKey)
+    } else {
+      // Normal navigation
+      emit('update:activeTab', item.id)
+    }
   }
-])
+}
+
+const getPlanName = (featureKey) => {
+    const plan = features[featureKey]?.requiredPlan;
+    return PLAN_NAMES[plan] || 'Professional';
+}
+
+// Helper to check if feature should be visible in menu
+const isFeatureVisible = (featureKey) => {
+  if (!featureKey) return true; // Always show if no feature key
+  // Check if feature is enabled in featureSettings
+  const isEnabled = featureSettings.value && featureSettings.value[featureKey] !== false;
+  // Also check if feature is not locked by plan
+  const notLocked = !isLocked(featureKey);
+  return isEnabled && notLocked;
+};
+
+const menuItems = computed(() => {
+  const allItems = [
+    { 
+      id: 'map', 
+      label: 'Mapa', 
+      icon: 'pi pi-map',
+      command: () => emit('update:activeTab', 'map'),
+      featureKey: 'map'
+    },
+    {
+      label: 'Zarządzanie',
+      icon: 'pi pi-briefcase',
+      items: [
+        { 
+          id: 'reviews', 
+          label: 'Opinie', 
+          icon: 'pi pi-star',
+          command: () => emit('update:activeTab', 'reviews'),
+          featureKey: 'reviews'
+        },
+        { 
+          id: 'posts', 
+          label: 'Posty', 
+          icon: 'pi pi-pencil',
+          command: createCommand({ id: 'posts' }, 'postPublishing'),
+          featureKey: 'postPublishing'
+        },
+        { 
+          id: 'content', 
+          label: 'Wizytówka', 
+          icon: 'pi pi-id-card',
+          command: () => emit('update:activeTab', 'content'),
+          featureKey: 'content'
+        }
+      ].filter(item => isFeatureVisible(item.featureKey))
+    },
+    {
+      label: 'Raporty',
+      icon: 'pi pi-chart-bar',
+      items: [
+        { 
+          id: 'keywords', 
+          label: 'Pozycje', 
+          icon: 'pi pi-list',
+          command: createCommand({ id: 'keywords' }, 'keywords'),
+          featureKey: 'keywords'
+        },
+        { 
+          id: 'comparison', 
+          label: 'Konkurencja', 
+          icon: 'pi pi-users',
+          command: createCommand({ id: 'comparison' }, 'comparison'),
+          featureKey: 'comparison'
+        }
+      ].filter(item => isFeatureVisible(item.featureKey))
+    },
+    { 
+      id: 'settings', 
+      label: 'Ustawienia', 
+      icon: 'pi pi-cog',
+      command: () => emit('update:activeTab', 'settings'),
+      featureKey: 'settings'
+    }
+  ];
+  
+  // Filter out parent items that have no visible children
+  return allItems.filter(item => {
+    if (item.items) {
+      // If it's a parent with submenu, only show if it has visible children
+      return item.items.length > 0;
+    }
+    // Otherwise, check if the feature itself is visible
+    return isFeatureVisible(item.featureKey);
+  });
+})
 
 const showGenerateMenu = ref(false)
 

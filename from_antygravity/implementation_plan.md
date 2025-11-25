@@ -1,0 +1,85 @@
+# Feature System Refactor Plan
+
+## Goal Description
+Refactor the current fragmented feature gating system into a unified, flexible, and developer-friendly architecture. The goal is to make it easy to define features, plans, and limits (quotas) in one place, and simple to check them in components.
+
+## User Review Required
+> [!IMPORTANT]
+> This refactor will replace `src/composables/featureHierarchy.js` and `src/composables/useFeatureFlags.js` with a new unified system. Existing components using these will need to be updated.
+
+## Proposed Changes
+
+### Configuration
+#### [NEW] src/config/features.js
+A single source of truth for all feature definitions.
+- Defines the hierarchy (if needed for UI) or flat list.
+- Defines plans and their hierarchy (Basic < Professional < Enterprise).
+- Defines limits/quotas per plan for each feature.
+
+Example structure:
+```javascript
+export const PLANS = {
+  BASIC: 'basic',
+  PROFESSIONAL: 'professional',
+  ENTERPRISE: 'enterprise'
+};
+
+export const PLAN_LEVELS = {
+  [PLANS.BASIC]: 1,
+  [PLANS.PROFESSIONAL]: 2,
+  [PLANS.ENTERPRISE]: 3
+};
+
+export const FEATURES = {
+  reviews: {
+    label: 'Opinie',
+    requiredPlan: PLANS.BASIC,
+    limits: {
+      monthlyRequests: { [PLANS.BASIC]: 100, [PLANS.PROFESSIONAL]: 1000, [PLANS.ENTERPRISE]: Infinity }
+    }
+  },
+  aiAnalysis: {
+    label: 'Analiza AI',
+    requiredPlan: PLANS.PROFESSIONAL,
+    limits: {
+      analysisCount: { [PLANS.PROFESSIONAL]: 50, [PLANS.ENTERPRISE]: 500 }
+    }
+  }
+};
+```
+
+### Composable
+#### [MODIFY] src/composables/useFeatures.js (formerly useFeatureFlags.js)
+A unified composable that provides a simple API:
+- `can(featureKey)`: Returns true if user has access (plan level met).
+- `isLocked(featureKey)`: Returns true if user does NOT have access.
+- `getLimit(featureKey, limitName)`: Returns the limit for the current plan.
+- `checkLimit(featureKey, limitName, currentUsage)`: Returns true if usage < limit.
+- `features`: Reactive object with all feature states (for UI binding).
+
+### Store
+#### [MODIFY] src/stores/featureSettings.js
+- Add support for tracking "usage" (mocked for now) to support quota checks.
+- Integrate with the new configuration.
+
+### Components
+#### [MODIFY] src/components/gtrack/reviews/ReviewsDashboard.vue
+- Update to use the new `useFeatures` API.
+- Remove local `findFeatureInHierarchy` logic.
+
+#### [MODIFY] src/components/gtrack/settings/BusinessSettings.vue
+- Update to use the new configuration for rendering plan comparisons.
+
+## Verification Plan
+
+### Automated Tests
+- Create a new test file `tests/unit/useFeatures.spec.js` (if unit testing setup exists) or a simple script to verify logic.
+- Since there is no unit test runner active, I will create a temporary verification script `verify-features.mjs` that runs in node to test the logic of `useFeatures` (mocking Vue refs).
+
+### Manual Verification
+- **Browser**: Open the app and navigate to Reviews Dashboard.
+- **Test**:
+    - Verify "Basic" plan user sees locks on "Professional" features.
+    - Verify "Professional" plan user sees features unlocked.
+    - Verify clicking a locked feature redirects to settings with correct highlight.
+    - Verify limits are correctly reported (via console logs or UI indicators).

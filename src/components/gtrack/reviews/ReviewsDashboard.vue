@@ -3,14 +3,18 @@
     <!-- Navigation Toolbar (Fixed Top) -->
     <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-4 shadow-sm sticky top-0" :style="{ zIndex: 0 }">
        <div v-for="tab in tabs" :key="tab.id" class="relative flex items-center">
-         <Button 
-           :label="tab.label" 
-           :icon="tab.icon"
-           :severity="isTabActive(tab.id) ? 'primary' : 'secondary'" 
-           :text="!isTabActive(tab.id)"
-           @click="navigateToTab(tab.id)"
-           size="small"
-         />
+         <div class="flex items-center gap-2" :class="{ 'opacity-50': isTabLocked(tab) }">
+           <Button 
+             :label="tab.label" 
+             :icon="isTabLocked(tab) ? 'pi pi-lock' : tab.icon"
+             :severity="isTabActive(tab.id) ? 'primary' : 'secondary'" 
+             :text="!isTabActive(tab.id)"
+             @click="navigateToTab(tab.id)"
+             size="small"
+             :disabled="isTabLocked(tab)"
+             v-tooltip.top="isTabLocked(tab) ? getTabLockReason(tab) : ''"
+           />
+         </div>
          <Badge 
            v-if="(tab.id === 'reviews' && unreadReviewsCount > 0) || (tab.id === 'intercepted' && unreadInterceptedCount > 0)"
            :value="tab.id === 'reviews' ? unreadReviewsCount : unreadInterceptedCount"
@@ -54,6 +58,7 @@ import Toast from 'primevue/toast';
 import DynamicDialog from 'primevue/dynamicdialog';
 import ConfirmDialog from 'primevue/confirmdialog';
 import { ReviewsService } from '../../../services/ReviewsService';
+import { useFeatures } from '../../../composables/useFeatures';
 
 const stats = ref(null);
 const unreadReviewsCount = ref(0);
@@ -61,14 +66,32 @@ const unreadInterceptedCount = ref(0);
 const route = useRoute();
 const router = useRouter();
 
+const { can, isLocked, features } = useFeatures();
+
 const tabs = [
-  { id: 'overview', label: 'Przegląd', icon: 'pi pi-home', routeName: 'reviews-overview' },
-  { id: 'reviews', label: 'Opinie', icon: 'pi pi-comments', routeName: 'reviews-list' },
-  { id: 'acquisition', label: 'Pozyskiwanie Opinii', icon: 'pi pi-megaphone', routeName: 'reviews-acquisition' },
-  { id: 'intercepted', label: 'Przechwycone Opinie', icon: 'pi pi-inbox', routeName: 'reviews-intercepted' },
-  { id: 'templates', label: 'Szablony Odpowiedzi', icon: 'pi pi-list', routeName: 'reviews-templates' },
-  { id: 'auto-reply', label: 'Auto-Odpowiedzi', icon: 'pi pi-sparkles', routeName: 'reviews-auto-reply' }
+  { id: 'overview', label: 'Przegląd', icon: 'pi pi-home', routeName: 'reviews-overview', featureKey: null },
+  { id: 'reviews', label: 'Opinie', icon: 'pi pi-comments', routeName: 'reviews-list', featureKey: 'viewReviews' },
+  { id: 'acquisition', label: 'Pozyskiwanie Opinii', icon: 'pi pi-megaphone', routeName: 'reviews-acquisition', featureKey: 'acquisition' },
+  { id: 'intercepted', label: 'Przechwycone Opinie', icon: 'pi pi-inbox', routeName: 'reviews-intercepted', featureKey: 'interceptedReviews' },
+  { id: 'templates', label: 'Szablony Odpowiedzi', icon: 'pi pi-list', routeName: 'reviews-templates', featureKey: 'templates' },
+  { id: 'auto-reply', label: 'Auto-Odpowiedzi', icon: 'pi pi-sparkles', routeName: 'reviews-auto-reply', featureKey: 'autoReply' }
 ];
+
+// Check if tab is locked
+const isTabLocked = (tab) => {
+  if (!tab.featureKey) return false;
+  return isLocked(tab.featureKey);
+};
+
+// Get lock reason for tab
+const getTabLockReason = (tab) => {
+  if (!isTabLocked(tab)) return '';
+  const feature = features[tab.featureKey];
+  if (!feature) return '';
+  // We can get the required plan name from the feature definition
+  // For now, hardcoding based on plan levels or just generic message
+  return `${feature.label} wymaga wyższego planu. Kliknij, aby zobaczyć szczegóły.`;
+};
 
 const pageTitle = computed(() => {
   const titles = {
@@ -110,6 +133,17 @@ const isTabActive = (tabId) => {
 const navigateToTab = (tabId) => {
     const mapping = tabs.find(t => t.id === tabId);
     if (mapping) {
+        // Don't navigate if tab is locked
+        if (isTabLocked(mapping)) {
+            router.push({ 
+                name: 'settings',
+                query: { 
+                    tab: 'business',
+                    highlight: mapping.featureKey 
+                }
+            });
+            return;
+        }
         router.push({ name: mapping.routeName, params: { locationId: route.params.locationId } });
     }
 };

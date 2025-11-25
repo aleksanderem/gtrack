@@ -8,9 +8,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@juit/vue-tiny-editor": "github:juitnow/juit-vue-tiny-editor",
     "@primeuix/themes": "^1.2.5",
     "@vueuse/core": "^14.0.0",
     "@vueuse/integrations": "^14.0.0",
+    "chart.js": "^4.5.1",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
     "primeflex": "^4.0.0",

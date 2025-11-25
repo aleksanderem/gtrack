@@ -47,8 +47,8 @@
                         </div>
                         <div class="flex items-center gap-3">
                             <Button label="Nowy szablon" icon="pi pi-plus" size="small" @click="createNewTemplate" />
-                            <span v-if="getCurrentLimit('templates', 'maxTemplates')" class="text-sm text-surface-600">
-                                {{ activeTemplatesCount }}/{{ getCurrentLimit('templates', 'maxTemplates') }} aktywnych szablonów
+                            <span v-if="getLimit('templates', 'maxTemplates')" class="text-sm text-surface-600">
+                                {{ activeTemplatesCount }}/{{ getLimit('templates', 'maxTemplates') }} aktywnych szablonów
                             </span>
                         </div>
                     </div>
@@ -578,8 +578,8 @@ import { useRouter } from 'vue-router';
 import { ReviewsService } from '../../../services/ReviewsService';
 import TinyEditor from '@juit/vue-tiny-editor';
 import '@juit/vue-tiny-editor/style.css';
-import { useFeatureLimits } from '../../../composables/useFeatureLimits';
-import { useFeatureFlags, FEATURES } from '../../../composables/useFeatureFlags';
+import { useFeatures } from '../../../composables/useFeatures';
+import { PLAN_NAMES } from '../../../config/features';
 
 const templates = ref([]);
 const loading = ref(true);
@@ -605,19 +605,16 @@ const router = useRouter();
 const confirm = useConfirm();
 const toast = useToast();
 const primevue = usePrimeVue();
-const { getCurrentLimit, isLimitExceeded, getLimitMessage } = useFeatureLimits();
-const { isFeatureLocked } = useFeatureFlags();
+const { can, isLocked, getLimit, checkLimit, features } = useFeatures();
 
 // Check if auto-reply feature is available
-const isAutoReplyAvailable = computed(() => {
-  const autoReplyFeature = FEATURES.AUTO_REPLY;
-  return !isFeatureLocked(autoReplyFeature);
-});
+const isAutoReplyAvailable = computed(() => can('autoReply'));
 
 const getAutoReplyLockReason = computed(() => {
-  const autoReplyFeature = FEATURES.AUTO_REPLY;
-  if (isFeatureLocked(autoReplyFeature)) {
-    return `Auto-odpowiedzi są dostępne w planie ${autoReplyFeature.planName}. Zwiększ pakiet, aby używać tej funkcji.`;
+  if (isLocked('autoReply')) {
+    const plan = features.autoReply?.requiredPlan;
+    const planName = PLAN_NAMES[plan] || 'Professional';
+    return `Auto-odpowiedzi są dostępne w planie ${planName}. Zwiększ pakiet, aby używać tej funkcji.`;
   }
   return null;
 });
@@ -853,35 +850,28 @@ const disableAutoReplyIfNotAvailable = async () => {
   }
 };
 
-// Computed properties for limit management
-const templateLimit = computed(() => getCurrentLimit('templates', 'maxTemplates'));
+// Template limits
+const templateLimit = computed(() => getLimit('templates', 'maxTemplates'));
 const activeTemplatesCount = computed(() => templates.value.filter(t => t.active).length);
+
 const limitExceededInfo = computed(() => {
-  if (!templateLimit.value) return null;
-  const activeCount = activeTemplatesCount.value;
-  if (activeCount > templateLimit.value) {
-    return {
-      excess: activeCount - templateLimit.value,
-      limit: templateLimit.value,
-      total: templates.value.length
-    };
-  }
-  return null;
+    if (!templateLimit.value) return null;
+    if (activeTemplatesCount.value > templateLimit.value) {
+        return {
+            limit: templateLimit.value,
+            excess: activeTemplatesCount.value - templateLimit.value
+        };
+    }
+    return null;
 });
 
-// Show limit message when limit is reached (active count equals limit) or exceeded
 const showLimitMessage = computed(() => {
-  if (!templateLimit.value) return false;
-  const activeCount = activeTemplatesCount.value;
-  // Show message when limit is reached or exceeded, and there are inactive templates
-  const inactiveCount = templates.value.filter(t => !t.active).length;
-  return activeCount >= templateLimit.value && inactiveCount > 0;
+    if (!templateLimit.value) return false;
+    return activeTemplatesCount.value >= templateLimit.value;
 });
 
-// Check if template should be disabled (exceeds limit)
 const isTemplateDisabled = (template) => {
   if (!templateLimit.value) return false;
-  if (!template.active) return false; // Only disable active templates that exceed limit
   
   const activeTemplates = templates.value.filter(t => t.active);
   const activeCount = activeTemplates.length;

@@ -2,6 +2,14 @@
   <div class="mb-6">
     <h3 class="text-lg font-semibold text-gray-900 mb-3">Słowa kluczowe</h3>
 
+    <!-- Limit Warning Banner -->
+    <LimitWarningBanner 
+      v-if="keywordLimitStatus.hasLimit && (keywordLimitStatus.isExceeded || keywordLimitStatus.percentage >= 75)"
+      :status="keywordLimitStatus"
+      :show-upgrade-button="false"
+      class="mb-3"
+    />
+
     <!-- Add Keyword Input -->
     <div class="mb-3">
       <InputText
@@ -20,8 +28,15 @@
         v-for="(keyword, index) in keywords"
         :key="index"
         class="keyword-tag"
+        :class="{ 'keyword-tag-inactive': !isKeywordWithinLimit(index) }"
       >
         {{ keyword }}
+        <Tag 
+          v-if="!isKeywordWithinLimit(index)" 
+          value="Nieaktywne" 
+          severity="warning"
+          class="text-[10px] ml-1"
+        />
         <i @click="removeKeyword(index)" class="pi pi-times remove"></i>
       </span>
     </div>
@@ -29,8 +44,11 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits } from 'vue'
+import { ref, computed } from 'vue'
 import InputText from 'primevue/inputtext'
+import Tag from 'primevue/tag'
+import LimitWarningBanner from '../common/LimitWarningBanner.vue'
+import { useFeatures } from '../../../composables/useFeatures'
 
 const props = defineProps({
   keywords: {
@@ -41,7 +59,20 @@ const props = defineProps({
 
 const emit = defineEmits(['update:keywords'])
 
+const { getLimit, getLimitStatus } = useFeatures()
+
 const newKeyword = ref('')
+
+// Get keyword limit status
+const keywordLimitStatus = computed(() => {
+  return getLimitStatus('keywords', 'maxKeywords', props.keywords.length)
+})
+
+// Check if keyword is within limit
+const isKeywordWithinLimit = (index) => {
+  const limit = getLimit('keywords', 'maxKeywords')
+  return limit === null || limit >= 999 || index < limit
+}
 
 const addKeyword = () => {
   if (newKeyword.value.trim()) {
@@ -68,6 +99,13 @@ const removeKeyword = (index) => {
   font-size: 0.875rem;
   color: #1e40af;
   gap: 0.5rem;
+}
+
+.keyword-tag-inactive {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  color: #9ca3af;
+  opacity: 0.7;
 }
 
 .keyword-tag .remove {

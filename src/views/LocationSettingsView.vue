@@ -14,8 +14,6 @@
       <SettingsLayout
         v-model="settingsTab"
         :items="settingsNavItems"
-        title="Domyślna konfiguracja siatki"
-        subtitle="Dostosuj ilość punktów oraz odstępy, aby dopasować pomiar do charakterystyki miasta. Większa siatka daje precyzyjniejszy obraz, mniejsza – szybsze wyniki."
         nav-title="Sekcje"
       >
         <BusinessSettings
@@ -41,8 +39,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, watch, nextTick } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import Button from 'primevue/button';
 import SettingsLayout from '../components/gtrack/settings/SettingsLayout.vue';
 import BusinessSettings from '../components/gtrack/settings/BusinessSettings.vue';
@@ -51,9 +49,12 @@ import KeywordsSettings from '../components/gtrack/settings/KeywordsSettings.vue
 import FrequencySettings from '../components/gtrack/settings/FrequencySettings.vue';
 import NotificationSettings from '../components/gtrack/settings/NotificationSettings.vue';
 import { useLocationData } from '../composables/useLocationData';
+import { useFeatureSettings } from '../stores/featureSettings';
 
 const router = useRouter();
+const route = useRoute();
 const { location, keywords, gridConfig } = useLocationData();
+const { featureSettings } = useFeatureSettings();
 
 const settingsTab = ref('business');
 
@@ -61,13 +62,23 @@ const businessConfig = ref({
   placeId: 'ChIJ...',
   cid: '',
   isConnected: false,
+  // Feature settings will be synced from global store
   autoReply: false,
-  syncPhotos: true,
-  autoPost: false,
-  protectData: true,
-  monitorQA: false,
-  syncHours: false
+  photoMonitoring: true,
+  postPublishing: false,
+  dataProtection: true,
+  qaMonitoring: false,
+  hoursSync: false
 });
+
+// Sync businessConfig with global feature settings
+watch(() => featureSettings.value, (newSettings) => {
+  Object.keys(newSettings).forEach(key => {
+    if (businessConfig.value.hasOwnProperty(key)) {
+      businessConfig.value[key] = newSettings[key];
+    }
+  });
+}, { immediate: true, deep: true });
 
 const settingsNavItems = [
   {
@@ -125,6 +136,30 @@ const handleLocationSearch = (query) => {
     gridConfig.value.centerName = query;
   }
 };
+
+// Handle highlight query param for scrolling to feature
+watch(() => route.query.highlight, async (highlight) => {
+  if (highlight) {
+    settingsTab.value = 'business';
+    await nextTick();
+    // Scroll to the feature card - BusinessSettings will handle highlighting
+    setTimeout(() => {
+      const element = document.querySelector(`[data-feature-key="${highlight}"]`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Remove highlight from URL
+        router.replace({ query: { ...route.query, highlight: undefined } });
+      }
+    }, 300);
+  }
+}, { immediate: true });
+
+// Handle tab query param
+watch(() => route.query.tab, (tab) => {
+  if (tab && settingsNavItems.find(item => item.id === tab)) {
+    settingsTab.value = tab;
+  }
+}, { immediate: true });
 </script>
 
 

@@ -1,0 +1,20 @@
+# Feature Gating Refactor Tasks
+
+- [x] Create [src/config/features.js](file:///Users/alex/Desktop/playground/src/config/features.js)
+- [x] Create [src/composables/useFeatures.js](file:///Users/alex/Desktop/playground/src/composables/useFeatures.js)
+- [x] Update [src/stores/featureSettings.js](file:///Users/alex/Desktop/playground/src/stores/featureSettings.js)
+- [x] Refactor [src/components/gtrack/reviews/ReviewsDashboard.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/reviews/ReviewsDashboard.vue)
+- [x] Refactor [src/components/gtrack/settings/FeatureLicenseBadge.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/settings/FeatureLicenseBadge.vue)
+- [x] Refactor [src/components/gtrack/settings/BusinessSettings.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/settings/BusinessSettings.vue)
+- [x] Refactor [src/components/gtrack/reviews/AIAnalysis.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/reviews/AIAnalysis.vue)
+- [x] Refactor [src/components/gtrack/reviews/FeatureCard.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/reviews/FeatureCard.vue)
+- [x] Refactor [src/components/gtrack/reviews/ReviewItem.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/reviews/ReviewItem.vue)
+- [x] Refactor [src/components/gtrack/reviews/ResponseTemplates.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/reviews/ResponseTemplates.vue)
+- [x] Refactor [src/components/gtrack/reviews/AutoReplySettings.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/reviews/AutoReplySettings.vue)
+- [x] Refactor [src/components/gtrack/debug/FeatureDebugBar.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/debug/FeatureDebugBar.vue)
+- [x] Refactor [src/components/gtrack/TopBar.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/TopBar.vue)
+- [x] Refactor [src/components/gtrack/reviews/TemplateSelector.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/reviews/TemplateSelector.vue)
+- [x] Delete [src/composables/featureHierarchy.js](file:///Users/alex/Desktop/playground/src/composables/featureHierarchy.js)
+- [x] Delete [src/composables/useFeatureFlags.js](file:///Users/alex/Desktop/playground/src/composables/useFeatureFlags.js)
+- [x] Delete [src/composables/useFeatureLimits.js](file:///Users/alex/Desktop/playground/src/composables/useFeatureLimits.js)
+- [x] Verify all components work with new system

@@ -64,7 +64,8 @@ import { useRouter } from 'vue-router';
 import Card from 'primevue/card';
 import Button from 'primevue/button';
 import Tag from 'primevue/tag';
-import { useFeatureFlags, FEATURES } from '../../../composables/useFeatureFlags';
+import { useFeatures } from '../../../composables/useFeatures';
+import { PLAN_NAMES } from '../../../config/features';
 
 const props = defineProps({
   id: {
@@ -96,21 +97,23 @@ const props = defineProps({
 });
 
 const router = useRouter();
-const { isFeatureAvailable: checkFeatureAvailable, isFeatureLocked } = useFeatureFlags();
+const { can, features } = useFeatures();
 
 // Find feature in FEATURES object
 const feature = computed(() => {
-  return Object.values(FEATURES).find(f => f.key === props.featureKey) || null;
+  return features[props.featureKey] || null;
 });
 
 const isFeatureAvailable = computed(() => {
   if (props.alwaysAvailable || !props.featureKey) return true; // Always available if flag set or no feature key
-  if (!feature.value) return true; // If feature not found, assume available
-  return checkFeatureAvailable(feature.value);
+  return can(props.featureKey);
 });
 
 const featureLabel = computed(() => feature.value?.label || 'Funkcja');
-const featurePlanName = computed(() => feature.value?.planName || 'Professional');
+const featurePlanName = computed(() => {
+  const plan = feature.value?.requiredPlan;
+  return PLAN_NAMES[plan] || 'Professional';
+});
 
 // Demo mode state - shared across all FeatureCard instances
 const demoStates = ref({});

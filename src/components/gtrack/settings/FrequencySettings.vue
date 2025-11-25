@@ -18,14 +18,33 @@
         <label
           v-for="option in frequencyOptions"
           :key="option.value"
-          class="flex items-center gap-4 px-5 py-4 cursor-pointer transition-colors hover:bg-gray-50"
-          :class="{ 'bg-blue-50/50': selectedFrequency === option.value }"
+          class="flex items-center gap-4 px-5 py-4 transition-colors"
+          :class="[
+            option.locked 
+              ? 'bg-gray-50 opacity-60 cursor-not-allowed' 
+              : 'cursor-pointer hover:bg-gray-50',
+            selectedFrequency === option.value && !option.locked ? 'bg-blue-50/50' : ''
+          ]"
         >
-          <RadioButton v-model="selectedFrequency" :value="option.value" name="frequency" />
+          <RadioButton 
+            v-model="selectedFrequency" 
+            :value="option.value" 
+            :disabled="option.locked"
+            name="frequency" 
+          />
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-1 gap-1">
-            <span class="text-gray-900 font-medium">
-              {{ option.label }}
-            </span>
+            <div class="flex items-center gap-2">
+              <span class="font-medium" :class="option.locked ? 'text-gray-400' : 'text-gray-900'">
+                {{ option.label }}
+              </span>
+              <Tag 
+                v-if="option.locked" 
+                :value="option.requiredPlanName"
+                severity="warning"
+                icon="pi pi-lock"
+                class="text-[10px]"
+              />
+            </div>
             <span class="text-sm text-gray-500">
               {{ option.description }}
             </span>
@@ -103,19 +122,56 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import Select from 'primevue/select'
 import InputText from 'primevue/inputtext'
 import RadioButton from 'primevue/radiobutton'
 import Message from 'primevue/message'
+import Tag from 'primevue/tag'
+import { useFeatures } from '../../../composables/useFeatures'
+import { PLAN_NAMES, PLANS } from '../../../config/features'
 
-const frequencyOptions = [
-  { value: 'daily', label: 'Codziennie', description: 'Intensywne monitorowanie zmian' },
-  { value: 'weekly', label: 'Raz w tygodniu', description: 'Standardowy cykl raportowania' },
-  { value: 'biweekly', label: 'Co 2 tygodnie', description: 'Zbalansowane użycie zasobów' },
-  { value: 'monthly', label: 'Raz w miesiącu', description: 'Podsumowania długoterminowe' },
-  { value: 'manual', label: 'Ręcznie', description: 'Tylko na żądanie użytkownika' }
+const { currentPlan } = useFeatures()
+
+// Get available frequencies from localStorage (Debug Bar overrides) or config
+const getAvailableFrequencies = () => {
+  const localOverrides = JSON.parse(localStorage.getItem('featureFrequencies') || '{}')
+  const scheduleOverrides = localOverrides['keywordScanningSchedule']
+  
+  if (scheduleOverrides && scheduleOverrides[currentPlan.value]) {
+    return scheduleOverrides[currentPlan.value]
+  }
+  
+  // Fallback to config defaults
+  const configDefaults = {
+    [PLANS.BASIC]: ['monthly', 'biweekly', 'weekly', 'manual'],
+    [PLANS.PROFESSIONAL]: ['monthly', 'biweekly', 'weekly', 'daily', 'manual'],
+    [PLANS.ENTERPRISE]: ['monthly', 'biweekly', 'weekly', 'daily', 'hourly', 'manual']
+  }
+  
+  return configDefaults[currentPlan.value] || configDefaults[PLANS.BASIC]
+}
+
+// All possible frequency options with metadata
+const allFrequencyOptions = [
+  { value: 'hourly', label: 'Co godzinę', description: 'Maksymalne monitorowanie', requiredPlan: PLANS.ENTERPRISE },
+  { value: 'daily', label: 'Codziennie', description: 'Intensywne monitorowanie zmian', requiredPlan: PLANS.PROFESSIONAL },
+  { value: 'weekly', label: 'Raz w tygodniu', description: 'Standardowy cykl raportowania', requiredPlan: PLANS.BASIC },
+  { value: 'biweekly', label: 'Co 2 tygodnie', description: 'Zbalansowane użycie zasobów', requiredPlan: PLANS.BASIC },
+  { value: 'monthly', label: 'Raz w miesiącu', description: 'Podsumowania długoterminowe', requiredPlan: PLANS.BASIC },
+  { value: 'manual', label: 'Ręcznie', description: 'Tylko na żądanie użytkownika', requiredPlan: PLANS.BASIC }
 ]
+
+// Dynamically filtered options based on plan
+const frequencyOptions = computed(() => {
+  const availableFreqs = getAvailableFrequencies()
+  
+  return allFrequencyOptions.map(option => ({
+    ...option,
+    locked: !availableFreqs.includes(option.value),
+    requiredPlanName: PLAN_NAMES[option.requiredPlan]
+  }))
+})
 
 const weekDays = [
   { label: 'Poniedziałek', value: 1 },

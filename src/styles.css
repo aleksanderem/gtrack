@@ -33,3 +33,8 @@
 .p-menubar-submenu {
     z-index: 1000 !important;
 }
+
+/* Ensure Select overlay appears above other elements */
+.p-select-overlay {
+    z-index: 99999 !important;
+}

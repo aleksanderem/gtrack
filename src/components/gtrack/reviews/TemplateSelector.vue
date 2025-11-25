@@ -43,7 +43,7 @@
                 value="Limit pakietu" 
                 severity="warning"
                 class="text-xs w-fit"
-                v-tooltip.top="`Limit ${getCurrentLimit('templates', 'maxTemplates')} szablonów osiągnięty. Zwiększ pakiet, aby używać więcej szablonów.`"
+                v-tooltip.top="`Limit ${getLimit('templates', 'maxTemplates')} szablonów osiągnięty. Zwiększ pakiet, aby używać więcej szablonów.`"
               />
               <Tag 
                 v-else
@@ -141,7 +141,7 @@ import Skeleton from 'primevue/skeleton';
 import TinyEditor from '@juit/vue-tiny-editor';
 import '@juit/vue-tiny-editor/style.css';
 import { ReviewsService } from '../../../services/ReviewsService';
-import { useFeatureLimits } from '../../../composables/useFeatureLimits';
+import { useFeatures } from '../../../composables/useFeatures';
 
 const dialogRef = inject('dialogRef');
 const dialogData = inject('dialogData', {});
@@ -149,7 +149,7 @@ const templates = ref([]);
 const loading = ref(true);
 const search = ref('');
 
-const { getCurrentLimit } = useFeatureLimits();
+const { getLimit } = useFeatures();
 
 // Available variables map
 const availableVariables = [
@@ -186,7 +186,7 @@ const filteredTemplates = computed(() => {
     result = result.sort((a, b) => (a.id || 0) - (b.id || 0));
     
     // Apply package limit - only first N templates are available
-    const templateLimit = getCurrentLimit('templates', 'maxTemplates');
+    const templateLimit = getLimit('templates', 'maxTemplates');
     if (templateLimit !== null && templateLimit > 0) {
         // Mark templates beyond limit as unavailable
         result = result.map((template, index) => ({

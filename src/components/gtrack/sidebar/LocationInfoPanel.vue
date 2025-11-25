@@ -63,11 +63,26 @@
       
       <div class="flex flex-wrap gap-2">
         <Chip 
-            v-for="keyword in keywords" 
+            v-for="(keyword, index) in keywords" 
             :key="keyword" 
             :label="keyword" 
-            class="!bg-white !border !border-surface-200 !text-gray-700 !text-sm"
-        />
+            :class="[
+              '!text-sm',
+              isKeywordWithinLimit(index) 
+                ? '!bg-white !border !border-surface-200 !text-gray-700'
+                : '!bg-gray-50 !border !border-gray-300 !text-gray-400 opacity-60'
+            ]"
+        >
+          <template #default>
+            {{ keyword }}
+            <Tag 
+              v-if="!isKeywordWithinLimit(index)" 
+              value="Nieaktywne" 
+              severity="warning"
+              class="text-[10px] ml-2"
+            />
+          </template>
+        </Chip>
         <div v-if="keywords.length === 0" class="text-sm text-gray-500 italic w-full text-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">
             Brak zdefiniowanych słów kluczowych
         </div>
@@ -98,6 +113,7 @@ import Divider from 'primevue/divider'
 import Chip from 'primevue/chip'
 import Badge from 'primevue/badge'
 import Button from 'primevue/button'
+import { useFeatures } from '../../../composables/useFeatures'
 
 const props = defineProps({
   location: {
@@ -113,6 +129,14 @@ const props = defineProps({
     default: () => []
   }
 })
+
+const { getLimit } = useFeatures()
+
+// Check if keyword is within limit
+const isKeywordWithinLimit = (index) => {
+  const limit = getLimit('keywords', 'maxKeywords')
+  return limit === null || limit >= 999 || index < limit
+}
 
 // Mock business profile data (in a real app, this would come from props or store)
 // Using the same structure as in BusinessSettings.vue

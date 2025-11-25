@@ -1,0 +1,5 @@
+{
+  "artifactType": "ARTIFACT_TYPE_IMPLEMENTATION_PLAN",
+  "summary": "Refactor feature gating system to be more flexible and easier to use.\n- Centralize feature configuration.\n- Create a unified `useFeatures` composable.\n- Support quotas and limits natively.\n- Simplify component usage.",
+  "updatedAt": "2025-11-25T03:15:42.226910Z"
+}

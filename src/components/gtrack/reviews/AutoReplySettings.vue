@@ -3,7 +3,7 @@
         <div class="flex gap-6 relative">
             <!-- Left Menu - Fixed -->
             <div class="w-64 flex-shrink-0">
-                <div class="sticky top-[52px] h-[calc(100vh-52px)] overflow-y-auto">
+                <div class="sticky top-[52px] h-[calc(100vh-52px)] overflow-y-auto flex flex-col gap-4">
                     <Menu :model="menuItems" class="w-full">
                     <template #item="{ item, props }">
                         <a v-ripple class="flex items-center cursor-pointer" v-bind="props.action">
@@ -12,6 +12,37 @@
                         </a>
                     </template>
                     </Menu>
+
+                    <!-- Limit Progress Bar -->
+                    <div v-if="autoReplyLimitStatus.hasLimit" class="p-4 bg-surface-0 border border-surface-200 rounded-lg shadow-sm">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-semibold text-surface-700">Limit odpowiedzi</span>
+                            <span class="text-xs font-medium" :class="{'text-red-500': autoReplyLimitStatus.isExceeded}">
+                                {{ autoReplyLimitStatus.currentCount }}/{{ autoReplyLimitStatus.limit }}
+                            </span>
+                        </div>
+                        <ProgressBar 
+                            :value="autoReplyLimitStatus.percentage" 
+                            :showValue="false" 
+                            class="h-2 mb-2"
+                            :pt="{
+                                value: {
+                                    class: [
+                                        autoReplyLimitStatus.isExceeded || autoReplyLimitStatus.percentage >= 90 ? 'bg-red-500' : 
+                                        autoReplyLimitStatus.percentage >= 75 ? 'bg-orange-500' : 'bg-green-500'
+                                    ]
+                                }
+                            }"
+                        />
+                        <p class="text-xs text-surface-500 leading-tight">
+                            {{ autoReplyLimitStatus.message }}
+                        </p>
+                        <div v-if="autoReplyLimitStatus.upgradeMessage" class="mt-2">
+                            <p class="text-xs text-primary font-medium cursor-pointer hover:underline">
+                                {{ autoReplyLimitStatus.upgradeMessage }}
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -106,8 +137,8 @@
                                 size="small" 
                                 @click="openRuleDialog(null)"
                             />
-                            <span v-if="getCurrentLimit('autoReplyRules', 'maxRules')" class="text-sm text-surface-600">
-                                {{ rules.length }}/{{ getCurrentLimit('autoReplyRules', 'maxRules') }} reguł
+                            <span v-if="getLimit('autoReplyRules', 'maxRules')" class="text-sm text-surface-600">
+                                {{ rules.length }}/{{ getLimit('autoReplyRules', 'maxRules') }} reguł
                             </span>
                         </div>
                     </div>
@@ -460,30 +491,38 @@ import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
 import Select from 'primevue/select';
 import Menu from 'primevue/menu';
+import ProgressBar from 'primevue/progressbar';
 import TinyEditor from '@juit/vue-tiny-editor';
 import '@juit/vue-tiny-editor/style.css';
 import { ReviewsService } from '../../../services/ReviewsService';
-import { useFeatureLimits } from '../../../composables/useFeatureLimits';
-import { useFeatureFlags, FEATURES } from '../../../composables/useFeatureFlags';
+import { useFeatures } from '../../../composables/useFeatures';
+import { PLAN_NAMES } from '../../../config/features';
 
 const router = useRouter();
 const toast = useToast();
 const confirm = useConfirm();
-const { featureSettings, isFeatureEnabled, updateFeature } = useFeatureSettings();
-const { getCurrentLimit, isLimitExceeded, getLimitMessage } = useFeatureLimits();
-const { isFeatureAvailable, isFeatureLocked } = useFeatureFlags();
+const { featureSettings, isFeatureEnabled, updateFeature, usage } = useFeatureSettings();
+const { can, isLocked, getLimit, checkLimit, features, getLimitStatus } = useFeatures();
 
 // Computed property to check if auto-reply is enabled globally
 const isAutoReplyEnabled = computed(() => isFeatureEnabled('autoReply'));
 
+// Auto-reply limit status
+const autoReplyLimitStatus = computed(() => {
+  // We assume usage key matches limit key
+  const currentUsage = usage.value.maxAutoRepliesPerMonth || 0;
+  return getLimitStatus('autoReply', 'maxAutoRepliesPerMonth', currentUsage);
+});
+
 // Check if auto-reply feature is available in the plan
-const isAutoReplyAvailable = computed(() => isFeatureAvailable(FEATURES.AUTO_REPLY));
+const isAutoReplyAvailable = computed(() => can('autoReply'));
 
 // Get lock reason for auto-reply feature
 const getAutoReplyLockReason = computed(() => {
-  const autoReplyFeature = FEATURES.AUTO_REPLY;
-  if (isFeatureLocked(autoReplyFeature)) {
-    return `Auto-odpowiedzi są dostępne w planie ${autoReplyFeature.planName}. Zwiększ pakiet, aby używać tej funkcji.`;
+  if (isLocked('autoReply')) {
+    const plan = features.autoReply?.requiredPlan;
+    const planName = PLAN_NAMES[plan] || 'Professional';
+    return `Auto-odpowiedzi są dostępne w planie ${planName}. Zwiększ pakiet, aby używać tej funkcji.`;
   }
   return '';
 });

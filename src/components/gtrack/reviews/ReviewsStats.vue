@@ -156,7 +156,7 @@ const ratingColorClass = computed(() => {
 onMounted(() => {
   nextTick(() => {
     const cardBody = document.querySelector('.rating-card .p-card-body');
-    if (cardBody && Ripple) {
+    if (cardBody && Ripple && Ripple.mounted) {
       // Apply ripple directive to card body
       Ripple.mounted(cardBody, { value: true });
     }

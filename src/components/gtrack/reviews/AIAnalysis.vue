@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col gap-6">
     <!-- AI Insights & Best Practices -->
-    <Card class="border border-gray-100 shadow-sm">
+    <Card class="border border-gray-100 shadow-sm relative min-h-[400px]">
       <template #title>
         <div class="flex items-center gap-2">
           <i class="pi pi-lightbulb text-primary"></i>
@@ -9,6 +9,54 @@
         </div>
       </template>
       <template #content>
+        <!-- Blur overlay when feature is locked -->
+        <div v-if="!isAiAvailable && !showDemo" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
+          <div class="text-center p-8 max-w-md">
+            <i class="pi pi-lock text-4xl text-gray-400 mb-4"></i>
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">Funkcja niedostępna</h3>
+            <p class="text-sm text-gray-600 mb-4">
+              Wnioski AI są dostępne w planie {{ aiPlanName }}. Zwiększ pakiet, aby korzystać z analizy AI opinii klientów.
+            </p>
+            <div class="flex flex-col gap-2">
+              <Button 
+                label="Zobacz demo" 
+                icon="pi pi-eye"
+                size="small"
+                outlined
+                @click="toggleDemo"
+              />
+              <Button 
+                label="Zwiększ pakiet" 
+                icon="pi pi-arrow-right"
+                size="small"
+                @click="navigateToSettings"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <!-- Demo mode indicator -->
+        <div v-if="!isAiAvailable && showDemo" class="absolute top-2 right-2 z-20">
+          <Tag value="Tryb demo" severity="info" class="text-xs">
+            <template #value>
+              <div class="flex items-center gap-1">
+                <i class="pi pi-eye text-xs"></i>
+                <span>Tryb demo</span>
+                <Button 
+                  icon="pi pi-times" 
+                  text 
+                  rounded 
+                  size="small"
+                  class="ml-1 h-4 w-4 p-0"
+                  @click="toggleDemo"
+                  v-tooltip.top="'Zamknij demo'"
+                />
+              </div>
+            </template>
+          </Tag>
+        </div>
+        
+        <div :class="{ 'blur-sm pointer-events-none': !isAiAvailable && !showDemo }">
         <div v-if="loadingElements || loadingSentiment" class="space-y-4">
           <Skeleton height="150px"></Skeleton>
         </div>
@@ -140,11 +188,12 @@
             </div>
           </div>
         </div>
+        </div>
       </template>
     </Card>
 
     <!-- Sentiment Analysis -->
-    <Card class="border border-gray-100 shadow-sm">
+    <Card class="border border-gray-100 shadow-sm relative min-h-[400px]">
       <template #title>
         <div class="flex items-center gap-2">
           <i class="pi pi-heart text-primary"></i>
@@ -153,22 +202,71 @@
         </div>
       </template>
       <template #content>
-        <div v-if="loadingSentiment" class="space-y-4">
-          <Skeleton height="100px"></Skeleton>
+        <!-- Blur overlay when feature is locked -->
+        <div v-if="!isAiAvailable && !showDemo" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
+          <div class="text-center p-8 max-w-md">
+            <i class="pi pi-lock text-4xl text-gray-400 mb-4"></i>
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">Funkcja niedostępna</h3>
+            <p class="text-sm text-gray-600 mb-4">
+              Analiza sentymentu jest dostępna w planie {{ aiPlanName }}. Zwiększ pakiet, aby korzystać z analizy AI.
+            </p>
+            <div class="flex flex-col gap-2">
+              <Button 
+                label="Zobacz demo" 
+                icon="pi pi-eye"
+                size="small"
+                outlined
+                @click="toggleDemo"
+              />
+              <Button 
+                label="Zwiększ pakiet" 
+                icon="pi pi-arrow-right"
+                size="small"
+                @click="navigateToSettings"
+              />
+            </div>
+          </div>
         </div>
-        <div v-else-if="sentimentAnalysis && sentimentLineChartData" class="flex flex-col gap-4">
+        
+        <!-- Demo mode indicator -->
+        <div v-if="!isAiAvailable && showDemo" class="absolute top-2 right-2 z-20">
+          <Tag value="Tryb demo" severity="info" class="text-xs">
+            <template #value>
+              <div class="flex items-center gap-1">
+                <i class="pi pi-eye text-xs"></i>
+                <span>Tryb demo</span>
+                <Button 
+                  icon="pi pi-times" 
+                  text 
+                  rounded 
+                  size="small"
+                  class="ml-1 h-4 w-4 p-0"
+                  @click="toggleDemo"
+                  v-tooltip.top="'Zamknij demo'"
+                />
+              </div>
+            </template>
+          </Tag>
+        </div>
+        
+        <div :class="{ 'blur-sm pointer-events-none': !isAiAvailable && !showDemo }">
+          <div v-if="loadingSentiment" class="space-y-4">
+            <Skeleton height="100px"></Skeleton>
+          </div>
+          <div v-else-if="sentimentAnalysis && sentimentLineChartData" class="flex flex-col gap-4">
           <!-- Sentiment Distribution Chart -->
           <Chart type="line" :data="sentimentLineChartData" :options="sentimentLineChartOptions" class="h-[300px]" />
         </div>
-        <div v-else-if="!loadingSentiment" class="text-center py-8 text-gray-500">
-          <i class="pi pi-info-circle text-2xl mb-2"></i>
-          <p>Brak danych do wyświetlenia</p>
+          <div v-else-if="!loadingSentiment" class="text-center py-8 text-gray-500">
+            <i class="pi pi-info-circle text-2xl mb-2"></i>
+            <p>Brak danych do wyświetlenia</p>
+          </div>
         </div>
       </template>
     </Card>
 
     <!-- Products & Services Analysis -->
-    <Card class="border border-gray-100 shadow-sm">
+    <Card class="border border-gray-100 shadow-sm relative min-h-[400px]">
       <template #title>
         <div class="flex items-center gap-2">
           <i class="pi pi-shopping-bag text-primary"></i>
@@ -176,10 +274,58 @@
         </div>
       </template>
       <template #content>
-        <div v-if="loadingProducts" class="space-y-4">
-          <Skeleton height="150px"></Skeleton>
+        <!-- Blur overlay when feature is locked -->
+        <div v-if="!isAiAvailable && !showDemo" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
+          <div class="text-center p-8 max-w-md">
+            <i class="pi pi-lock text-4xl text-gray-400 mb-4"></i>
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">Funkcja niedostępna</h3>
+            <p class="text-sm text-gray-600 mb-4">
+              Analiza produktów i usług jest dostępna w planie {{ aiPlanName }}. Zwiększ pakiet, aby korzystać z analizy AI.
+            </p>
+            <div class="flex flex-col gap-2">
+              <Button 
+                label="Zobacz demo" 
+                icon="pi pi-eye"
+                size="small"
+                outlined
+                @click="toggleDemo"
+              />
+              <Button 
+                label="Zwiększ pakiet" 
+                icon="pi pi-arrow-right"
+                size="small"
+                @click="navigateToSettings"
+              />
+            </div>
+          </div>
         </div>
-        <div v-else-if="productsAnalysis" class="flex flex-col gap-6">
+        
+        <!-- Demo mode indicator -->
+        <div v-if="!isAiAvailable && showDemo" class="absolute top-2 right-2 z-20">
+          <Tag value="Tryb demo" severity="info" class="text-xs">
+            <template #value>
+              <div class="flex items-center gap-1">
+                <i class="pi pi-eye text-xs"></i>
+                <span>Tryb demo</span>
+                <Button 
+                  icon="pi pi-times" 
+                  text 
+                  rounded 
+                  size="small"
+                  class="ml-1 h-4 w-4 p-0"
+                  @click="toggleDemo"
+                  v-tooltip.top="'Zamknij demo'"
+                />
+              </div>
+            </template>
+          </Tag>
+        </div>
+        
+        <div :class="{ 'blur-sm pointer-events-none': !isAiAvailable && !showDemo }">
+          <div v-if="loadingProducts" class="space-y-4">
+            <Skeleton height="150px"></Skeleton>
+          </div>
+          <div v-else-if="productsAnalysis" class="flex flex-col gap-6">
           <!-- Services Chart -->
           <div v-if="productsAnalysis.services && productsAnalysis.services.length > 0">
             <h3 class="text-sm font-semibold text-gray-700 mb-3">Najczęściej wspominane usługi</h3>
@@ -192,15 +338,16 @@
             <Chart type="bar" :data="productsChartData" :options="barChartOptions" class="h-[300px]" />
           </div>
           
-          <div v-if="(!productsAnalysis.services || productsAnalysis.services.length === 0) && (!productsAnalysis.products || productsAnalysis.products.length === 0)" class="text-sm text-gray-500 italic text-center py-4">
-            Brak danych o produktach i usługach
+            <div v-if="(!productsAnalysis.services || productsAnalysis.services.length === 0) && (!productsAnalysis.products || productsAnalysis.products.length === 0)" class="text-sm text-gray-500 italic text-center py-4">
+              Brak danych o produktach i usługach
+            </div>
           </div>
         </div>
       </template>
     </Card>
 
     <!-- Time Trends Analysis -->
-    <Card class="border border-gray-100 shadow-sm">
+    <Card class="border border-gray-100 shadow-sm relative min-h-[400px]">
       <template #title>
         <div class="flex items-center gap-2">
           <i class="pi pi-chart-line text-primary"></i>
@@ -208,17 +355,66 @@
         </div>
       </template>
       <template #content>
-        <div v-if="loadingTimeTrends" class="space-y-4">
-          <Skeleton height="300px"></Skeleton>
+        <!-- Blur overlay when feature is locked -->
+        <div v-if="!isAiAvailable && !showDemo" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
+          <div class="text-center p-8 max-w-md">
+            <i class="pi pi-lock text-4xl text-gray-400 mb-4"></i>
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">Funkcja niedostępna</h3>
+            <p class="text-sm text-gray-600 mb-4">
+              Analiza trendów czasowych jest dostępna w planie {{ aiPlanName }}. Zwiększ pakiet, aby korzystać z analizy AI.
+            </p>
+            <div class="flex flex-col gap-2">
+              <Button 
+                label="Zobacz demo" 
+                icon="pi pi-eye"
+                size="small"
+                outlined
+                @click="toggleDemo"
+              />
+              <Button 
+                label="Zwiększ pakiet" 
+                icon="pi pi-arrow-right"
+                size="small"
+                @click="navigateToSettings"
+              />
+            </div>
+          </div>
         </div>
-        <div v-else-if="timeTrendsData">
-          <Chart type="line" :data="timeTrendsChartData" :options="timeTrendsChartOptions" class="h-[400px]" />
+        
+        <!-- Demo mode indicator -->
+        <div v-if="!isAiAvailable && showDemo" class="absolute top-2 right-2 z-20">
+          <Tag value="Tryb demo" severity="info" class="text-xs">
+            <template #value>
+              <div class="flex items-center gap-1">
+                <i class="pi pi-eye text-xs"></i>
+                <span>Tryb demo</span>
+                <Button 
+                  icon="pi pi-times" 
+                  text 
+                  rounded 
+                  size="small"
+                  class="ml-1 h-4 w-4 p-0"
+                  @click="toggleDemo"
+                  v-tooltip.top="'Zamknij demo'"
+                />
+              </div>
+            </template>
+          </Tag>
+        </div>
+        
+        <div :class="{ 'blur-sm pointer-events-none': !isAiAvailable && !showDemo }">
+          <div v-if="loadingTimeTrends" class="space-y-4">
+            <Skeleton height="300px"></Skeleton>
+          </div>
+          <div v-else-if="timeTrendsData">
+            <Chart type="line" :data="timeTrendsChartData" :options="timeTrendsChartOptions" class="h-[400px]" />
+          </div>
         </div>
       </template>
     </Card>
 
     <!-- Repeating Elements Analysis -->
-    <Card class="border border-gray-100 shadow-sm">
+    <Card class="border border-gray-100 shadow-sm relative min-h-[400px]">
       <template #title>
         <div class="flex items-center gap-2">
           <i class="pi pi-chart-bar text-primary"></i>
@@ -226,10 +422,58 @@
         </div>
       </template>
       <template #content>
-        <div v-if="loadingElements" class="space-y-4">
-          <Skeleton height="200px"></Skeleton>
+        <!-- Blur overlay when feature is locked -->
+        <div v-if="!isAiAvailable && !showDemo" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
+          <div class="text-center p-8 max-w-md">
+            <i class="pi pi-lock text-4xl text-gray-400 mb-4"></i>
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">Funkcja niedostępna</h3>
+            <p class="text-sm text-gray-600 mb-4">
+              Analiza powtarzających się elementów jest dostępna w planie {{ aiPlanName }}. Zwiększ pakiet, aby korzystać z analizy AI.
+            </p>
+            <div class="flex flex-col gap-2">
+              <Button 
+                label="Zobacz demo" 
+                icon="pi pi-eye"
+                size="small"
+                outlined
+                @click="toggleDemo"
+              />
+              <Button 
+                label="Zwiększ pakiet" 
+                icon="pi pi-arrow-right"
+                size="small"
+                @click="navigateToSettings"
+              />
+            </div>
+          </div>
         </div>
-        <div v-else-if="elementsAnalysis" class="flex flex-col gap-6">
+        
+        <!-- Demo mode indicator -->
+        <div v-if="!isAiAvailable && showDemo" class="absolute top-2 right-2 z-20">
+          <Tag value="Tryb demo" severity="info" class="text-xs">
+            <template #value>
+              <div class="flex items-center gap-1">
+                <i class="pi pi-eye text-xs"></i>
+                <span>Tryb demo</span>
+                <Button 
+                  icon="pi pi-times" 
+                  text 
+                  rounded 
+                  size="small"
+                  class="ml-1 h-4 w-4 p-0"
+                  @click="toggleDemo"
+                  v-tooltip.top="'Zamknij demo'"
+                />
+              </div>
+            </template>
+          </Tag>
+        </div>
+        
+        <div :class="{ 'blur-sm pointer-events-none': !isAiAvailable && !showDemo }">
+          <div v-if="loadingElements" class="space-y-4">
+            <Skeleton height="200px"></Skeleton>
+          </div>
+          <div v-else-if="elementsAnalysis" class="flex flex-col gap-6">
           <!-- Themes Chart -->
           <div v-if="elementsAnalysis.themes && elementsAnalysis.themes.length > 0">
             <h3 class="text-sm font-semibold text-gray-700 mb-3">Tematy w opiniach</h3>
@@ -254,6 +498,7 @@
             </div>
           </div>
           
+          </div>
         </div>
       </template>
     </Card>
@@ -269,7 +514,11 @@ import Chart from 'primevue/chart';
 import TabView from 'primevue/tabview';
 import TabPanel from 'primevue/tabpanel';
 import Knob from 'primevue/knob';
+import Button from 'primevue/button';
 import { ReviewsService } from '../../../services/ReviewsService';
+import { useFeatures } from '../../../composables/useFeatures';
+import { useRouter } from 'vue-router';
+import { PLAN_NAMES } from '../../../config/features';
 
 const props = defineProps({
   scenario: {
@@ -277,6 +526,35 @@ const props = defineProps({
     default: null
   }
 });
+
+const router = useRouter();
+const { isLocked, features } = useFeatures();
+
+// Check if AI feature is available
+const isAiAvailable = computed(() => !isLocked('aiAnalysis'));
+const aiPlanName = computed(() => {
+  const plan = features.aiAnalysis?.requiredPlan;
+  return PLAN_NAMES[plan] || 'Professional';
+});
+
+// Demo mode state
+const showDemo = ref(false);
+
+// Toggle demo mode
+const toggleDemo = () => {
+  showDemo.value = !showDemo.value;
+};
+
+// Navigate to settings
+const navigateToSettings = () => {
+  router.push({ 
+    name: 'settings',
+    query: { 
+      tab: 'business',
+      highlight: 'aiAnalysis'
+    }
+  });
+};
 
 // Get colors based on scenario
 const getScenarioColors = () => {

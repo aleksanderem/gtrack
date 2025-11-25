@@ -1,0 +1,70 @@
+# Feature Gating System Refactor Walkthrough
+
+## Overview
+This refactor centralized the feature gating logic, simplified component usage, and integrated usage tracking for quotas and limits. The legacy [featureHierarchy.js](file:///Users/alex/Desktop/playground/src/composables/featureHierarchy.js), [useFeatureFlags.js](file:///Users/alex/Desktop/playground/src/composables/useFeatureFlags.js), and [useFeatureLimits.js](file:///Users/alex/Desktop/playground/src/composables/useFeatureLimits.js) files have been replaced by a unified configuration and composable.
+
+## Changes
+
+### 1. Centralized Configuration
+Created [src/config/features.js](file:///Users/alex/Desktop/playground/src/config/features.js) as the single source of truth for:
+- Feature definitions (ID, label, required plan, icon, description)
+- Plan definitions (`PLANS`, `PLAN_LEVELS`, `PLAN_NAMES`)
+- Feature limits per plan
+
+### 2. Unified Composable
+Created [src/composables/useFeatures.js](file:///Users/alex/Desktop/playground/src/composables/useFeatures.js) which provides:
+- [can(featureKey)](file:///Users/alex/Desktop/playground/src/composables/useFeatures.js#13-27): Check if feature is available
+- [isLocked(featureKey)](file:///Users/alex/Desktop/playground/src/composables/useFeatures.js#28-32): Check if feature is locked
+- [getLimit(featureKey, limitKey)](file:///Users/alex/Desktop/playground/src/composables/useFeatures.js#33-41): Get specific limit for current plan
+- [checkLimit(featureKey, limitKey)](file:///Users/alex/Desktop/playground/src/composables/useFeatures.js#42-59): Check if usage is within limit
+- [getUsagePercentage(featureKey, limitKey)](file:///Users/alex/Desktop/playground/src/composables/useFeatures.js#60-68): Get usage percentage
+- [updateUsage(key, value)](file:///Users/alex/Desktop/playground/src/stores/featureSettings.js#93-102): Update usage counters
+
+### 3. Store Updates
+Updated [src/stores/featureSettings.js](file:///Users/alex/Desktop/playground/src/stores/featureSettings.js) to:
+- Track usage for all defined limits
+- Persist usage to `localStorage` (mock implementation)
+- Support incrementing usage counters
+
+### 4. Component Refactoring
+Refactored the following components to use the new system:
+- [src/components/gtrack/reviews/ReviewsDashboard.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/reviews/ReviewsDashboard.vue)
+- [src/components/gtrack/settings/FeatureLicenseBadge.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/settings/FeatureLicenseBadge.vue)
+- [src/components/gtrack/settings/BusinessSettings.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/settings/BusinessSettings.vue)
+- [src/components/gtrack/reviews/AIAnalysis.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/reviews/AIAnalysis.vue)
+- [src/components/gtrack/reviews/FeatureCard.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/reviews/FeatureCard.vue)
+- [src/components/gtrack/reviews/ReviewItem.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/reviews/ReviewItem.vue)
+- [src/components/gtrack/reviews/ResponseTemplates.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/reviews/ResponseTemplates.vue)
+- [src/components/gtrack/reviews/AutoReplySettings.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/reviews/AutoReplySettings.vue)
+- [src/components/gtrack/debug/FeatureDebugBar.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/debug/FeatureDebugBar.vue)
+- [src/components/gtrack/TopBar.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/TopBar.vue)
+- [src/components/gtrack/reviews/TemplateSelector.vue](file:///Users/alex/Desktop/playground/src/components/gtrack/reviews/TemplateSelector.vue)
+
+### 5. Cleanup
+Removed legacy files:
+- [src/composables/featureHierarchy.js](file:///Users/alex/Desktop/playground/src/composables/featureHierarchy.js)
+- [src/composables/useFeatureFlags.js](file:///Users/alex/Desktop/playground/src/composables/useFeatureFlags.js)
+- [src/composables/useFeatureLimits.js](file:///Users/alex/Desktop/playground/src/composables/useFeatureLimits.js)
+
+## Verification Results
+
+### Automated Checks
+- `grep` searches confirmed no remaining references to legacy files or composables.
+
+### Manual Verification Steps
+1. **Feature Locking**:
+   - Verify that features requiring higher plans are visually locked (e.g., AI Analysis, Auto-Reply).
+   - Check tooltips for correct "Upgrade to [Plan Name]" messages.
+
+2. **Limits**:
+   - Verify that limits (e.g., max templates, max reviews per page) are respected based on the selected plan.
+   - Check that usage bars or counters display correct values.
+
+3. **Plan Switching (Debug Bar)**:
+   - Use the Feature Debug Bar to switch plans (Basic -> Professional -> Enterprise).
+   - Confirm that features unlock/lock dynamically.
+   - Confirm that limits update dynamically.
+
+4. **Usage Tracking**:
+   - Perform actions that consume quota (e.g., generate AI reply).
+   - Verify that usage counters increment in the Debug Bar and relevant components.

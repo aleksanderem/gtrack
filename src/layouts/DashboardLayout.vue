@@ -38,6 +38,9 @@
         </router-view>
       </div>
     </div>
+    
+    <!-- Debug Bar -->
+    <FeatureDebugBar />
   </div>
 </template>
 
@@ -48,11 +51,16 @@ import FarLeftNavbar from '../components/gtrack/FarLeftNavbar.vue';
 import LeftSidebar from '../components/gtrack/LeftSidebar.vue';
 import TopBar from '../components/gtrack/TopBar.vue';
 import HorizontalCalendar from '../components/gtrack/HorizontalCalendar.vue';
+import FeatureDebugBar from '../components/gtrack/debug/FeatureDebugBar.vue';
 import { useLocationData } from '../composables/useLocationData';
+import { useFeatureSettings } from '../stores/featureSettings';
 
 const route = useRoute();
 const router = useRouter();
 const { location, keywords, trafficSummary, trafficSources, fetchLocationData } = useLocationData();
+
+// Initialize global feature settings
+const { loadSettings } = useFeatureSettings();
 
 const editMode = ref(false);
 const sidebarView = ref('stats');
@@ -136,7 +144,10 @@ watch(() => route.params.locationId, (newId) => {
 }, { immediate: true });
 
 // Mock stats loading
-onMounted(() => {
+onMounted(async () => {
+    // Load global feature settings
+    await loadSettings();
+    
     trafficLoading.value = true;
     setTimeout(() => { trafficLoading.value = false; }, 900);
 });

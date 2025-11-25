@@ -191,99 +191,51 @@
 
             <div class="grid gap-[1.5rem] md:grid-cols-2 lg:grid-cols-3 mx-0">
                <!-- Automation Cards -->
-               <div class="border border-gray-200 rounded-xl p-3 bg-white hover:border-blue-300 transition-all duration-200 flex flex-col justify-between h-full">
+               <div 
+                 v-for="card in featureCards" 
+                 :key="card.feature.id"
+                 :data-feature-key="card.configKey"
+                 class="border rounded-xl p-3 bg-white transition-all duration-200 flex flex-col justify-between h-full"
+                 :class="[
+                   highlightedFeature === card.configKey ? 'ring-2 ring-purple-500 ring-offset-2 shadow-lg' : '',
+                   isLocked(card.feature.id) 
+                     ? 'border-gray-200 opacity-75 hover:border-gray-300' 
+                     : card.feature.id === 'autoReply' ? 'hover:border-blue-300 border-gray-200' :
+                       card.feature.id === 'photoMonitoring' ? 'hover:border-purple-300 border-gray-200' :
+                       card.feature.id === 'postPublishing' ? 'hover:border-orange-300 border-gray-200' :
+                       card.feature.id === 'dataProtection' ? 'hover:border-red-300 border-gray-200' :
+                       card.feature.id === 'qaMonitoring' ? 'hover:border-teal-300 border-gray-200' :
+                       'hover:border-indigo-300 border-gray-200'
+                 ]"
+               >
                   <div>
-                    <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 flex-shrink-0">
-                      <i class="pi pi-comments text-xl"></i>
+                    <div 
+                      class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 flex-shrink-0"
+                      :class="[
+                        card.feature.id === 'autoReply' ? 'bg-blue-50 text-blue-600' :
+                        card.feature.id === 'photoMonitoring' ? 'bg-purple-50 text-purple-600' :
+                        card.feature.id === 'postPublishing' ? 'bg-orange-50 text-orange-600' :
+                        card.feature.id === 'dataProtection' ? 'bg-red-50 text-red-600' :
+                        card.feature.id === 'qaMonitoring' ? 'bg-teal-50 text-teal-600' :
+                        'bg-indigo-50 text-indigo-600'
+                      ]"
+                    >
+                      <i :class="[card.feature.icon, 'text-xl']"></i>
                     </div>
-                    <h5 class="font-semibold text-gray-900 text-base mb-2">Auto-odpowiedzi</h5>
+                    <h5 class="font-semibold text-gray-900 text-base mb-2">{{ card.feature.label }}</h5>
                     <p class="text-sm text-gray-500 leading-relaxed mb-4">
-                      System automatycznie wygeneruje i opublikuje podziękowania za pozytywne opinie (5★).
+                      {{ card.feature.description }}
                     </p>
+                    <FeatureLicenseBadge :feature="card.feature" :settings="config" class="mb-4" />
                   </div>
                   <div class="flex items-center justify-between pt-4 border-t border-gray-100">
                     <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Status</span>
-                    <InputSwitch v-model="config.autoReply" class="flex-shrink-0" />
-                  </div>
-               </div>
-
-               <div class="border border-gray-200 rounded-xl p-3 bg-white hover:border-purple-300 transition-all duration-200 flex flex-col justify-between h-full">
-                  <div>
-                    <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-4 flex-shrink-0">
-                       <i class="pi pi-images text-xl"></i>
-                    </div>
-                    <h5 class="font-semibold text-gray-900 text-base mb-2">Monitoring zdjęć</h5>
-                    <p class="text-sm text-gray-500 leading-relaxed mb-4">
-                      Powiadamiaj o nowych zdjęciach dodanych przez klientów i archiwizuj je.
-                    </p>
-                  </div>
-                  <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Status</span>
-                    <InputSwitch v-model="config.syncPhotos" class="flex-shrink-0" />
-                  </div>
-               </div>
-
-               <div class="border border-gray-200 rounded-xl p-3 bg-white hover:border-orange-300 transition-all duration-200 flex flex-col justify-between h-full">
-                  <div>
-                    <div class="w-12 h-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center mb-4 flex-shrink-0">
-                       <i class="pi pi-calendar text-xl"></i>
-                    </div>
-                    <h5 class="font-semibold text-gray-900 text-base mb-2">Publikacja postów</h5>
-                    <p class="text-sm text-gray-500 leading-relaxed mb-4">
-                      Włącz moduł planowania wpisów (Oferty, Wydarzenia) na profilu firmy.
-                    </p>
-                  </div>
-                  <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Status</span>
-                    <InputSwitch v-model="config.autoPost" class="flex-shrink-0" />
-                  </div>
-               </div>
-
-               <div class="border border-gray-200 rounded-xl p-3 bg-white hover:border-red-300 transition-all duration-200 flex flex-col justify-between h-full">
-                  <div>
-                    <div class="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4 flex-shrink-0">
-                       <i class="pi pi-shield text-xl"></i>
-                    </div>
-                    <h5 class="font-semibold text-gray-900 text-base mb-2">Ochrona danych</h5>
-                    <p class="text-sm text-gray-500 leading-relaxed mb-4">
-                      Blokuj nieautoryzowane zmiany w wizytówce (np. godziny, telefon) sugerowane przez użytkowników.
-                    </p>
-                  </div>
-                  <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Status</span>
-                    <InputSwitch v-model="config.protectData" class="flex-shrink-0" />
-                  </div>
-               </div>
-
-               <div class="border border-gray-200 rounded-xl p-3 bg-white hover:border-teal-300 transition-all duration-200 flex flex-col justify-between h-full">
-                  <div>
-                    <div class="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center mb-4 flex-shrink-0">
-                       <i class="pi pi-question-circle text-xl"></i>
-                    </div>
-                    <h5 class="font-semibold text-gray-900 text-base mb-2">Monitoring Q&A</h5>
-                    <p class="text-sm text-gray-500 leading-relaxed mb-4">
-                      Powiadamiaj o nowych pytaniach od klientów i sugeruj odpowiedzi AI.
-                    </p>
-                  </div>
-                  <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Status</span>
-                    <InputSwitch v-model="config.monitorQA" class="flex-shrink-0" />
-                  </div>
-               </div>
-
-               <div class="border border-gray-200 rounded-xl p-3 bg-white hover:border-indigo-300 transition-all duration-200 flex flex-col justify-between h-full">
-                  <div>
-                    <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 flex-shrink-0">
-                       <i class="pi pi-clock text-xl"></i>
-                    </div>
-                    <h5 class="font-semibold text-gray-900 text-base mb-2">Godziny otwarcia</h5>
-                    <p class="text-sm text-gray-500 leading-relaxed mb-4">
-                      Automatycznie aktualizuj godziny w dni świąteczne i wolne od pracy.
-                    </p>
-                  </div>
-                  <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Status</span>
-                    <InputSwitch v-model="config.syncHours" class="flex-shrink-0" />
+                    <InputSwitch 
+                      :modelValue="config[card.configKey]" 
+                      :disabled="isLocked(card.feature.id)"
+                      @update:modelValue="(value) => updateFeature(card.configKey, value)"
+                      class="flex-shrink-0" 
+                    />
                   </div>
                </div>
             </div>
@@ -324,7 +276,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import InputText from 'primevue/inputtext'
 import InputGroup from 'primevue/inputgroup'
 import Button from 'primevue/button'
@@ -345,6 +298,9 @@ import InputIcon from 'primevue/inputicon'
 
 import ConfirmDialog from 'primevue/confirmdialog'
 import { useConfirm } from 'primevue/useconfirm'
+import { useFeatures } from '../../../composables/useFeatures'
+import { useFeatureSettings } from '../../../stores/featureSettings'
+import FeatureLicenseBadge from './FeatureLicenseBadge.vue'
 
 const props = defineProps({
   modelValue: {
@@ -365,11 +321,65 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 const confirm = useConfirm()
+const route = useRoute()
+const { isLocked, features } = useFeatures()
+const { featureSettings, updateFeature: updateGlobalFeature } = useFeatureSettings()
+const highlightedFeature = ref(null)
 
 const config = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
+  get: () => {
+    // Merge props with global settings - global settings take precedence for feature flags
+    const merged = { ...props.modelValue }
+    Object.keys(featureSettings.value).forEach(key => {
+      if (merged.hasOwnProperty(key)) {
+        merged[key] = featureSettings.value[key]
+      }
+    })
+    return merged
+  },
+  set: (value) => {
+    emit('update:modelValue', value)
+    // Also update global store for feature flags
+    Object.keys(value).forEach(key => {
+      if (featureSettings.value.hasOwnProperty(key)) {
+        updateGlobalFeature(key, value[key])
+      }
+    })
+  }
 })
+
+// Feature cards configuration
+const featureCards = [
+  { feature: features.autoReply, configKey: 'autoReply' },
+  { feature: features.photoMonitoring, configKey: 'photoMonitoring' },
+  { feature: features.postPublishing, configKey: 'postPublishing' },
+  { feature: features.dataProtection, configKey: 'dataProtection' },
+  { feature: features.qaMonitoring, configKey: 'qaMonitoring' },
+  { feature: features.hoursSync, configKey: 'hoursSync' }
+]
+
+const updateFeature = async (configKey, value) => {
+  const feature = featureCards.find(f => f.configKey === configKey)?.feature
+  if (feature && isLocked(feature.id)) {
+    return // Don't allow toggling locked features
+  }
+  // Update global store
+  await updateGlobalFeature(configKey, value)
+  // Update local config
+  const newConfig = { ...config.value, [configKey]: value }
+  emit('update:modelValue', newConfig)
+}
+
+// Handle highlight from route query
+watch(() => route.query.highlight, (highlight) => {
+  if (highlight) {
+    highlightedFeature.value = highlight
+    // Remove highlight after 3 seconds
+    setTimeout(() => {
+      highlightedFeature.value = null
+    }, 3000)
+  }
+}, { immediate: true })
 
 // Search Logic
 const searchModalVisible = ref(false)

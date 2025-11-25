@@ -7,6 +7,13 @@
       </p>
     </header>
 
+    <!-- Limit Warning Banner -->
+    <LimitWarningBanner 
+      v-if="keywordLimitStatus.hasLimit && (keywordLimitStatus.isExceeded || keywordLimitStatus.percentage >= 75)"
+      :status="keywordLimitStatus"
+      @upgrade="handleUpgrade"
+    />
+
     <div class="space-y-4">
       <div class="flex gap-3">
         <InputGroup class="flex-1">
@@ -53,8 +60,10 @@
             <template #body="{ index }">
               <Badge 
                 :value="index + 1" 
-                severity="secondary" 
-                class="!bg-blue-50 !text-blue-600 !min-w-[2rem] !h-[2rem] flex items-center justify-center"
+                :severity="isKeywordWithinLimit(index) ? 'secondary' : 'warning'"
+                :class="isKeywordWithinLimit(index) 
+                  ? '!bg-blue-50 !text-blue-600 !min-w-[2rem] !h-[2rem] flex items-center justify-center'
+                  : '!bg-orange-50 !text-orange-600 !min-w-[2rem] !h-[2rem] flex items-center justify-center'"
               ></Badge>
             </template>
           </Column>
@@ -62,11 +71,32 @@
           <!-- Keyword / Inline Edit Column -->
           <Column field="self" style="width: auto" bodyClass="py-3">
             <template #body="{ data, index }">
-              <Inplace class="w-full" :closable="true" @open="startEditing(index)" @close="cancelEditing">
+              <Inplace 
+                class="w-full" 
+                :closable="true" 
+                :disabled="!isKeywordWithinLimit(index)"
+                @open="startEditing(index)" 
+                @close="cancelEditing"
+              >
                 <template #display>
-                  <div class="flex items-center gap-2 group cursor-pointer py-1">
-                    <span class="text-gray-900 font-medium text-[15px]">{{ data }}</span>
-                    <i class="pi pi-pencil text-gray-300 text-xs opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                  <div 
+                    class="flex items-center gap-2 py-1"
+                    :class="isKeywordWithinLimit(index) ? 'group cursor-pointer' : 'cursor-not-allowed'"
+                  >
+                    <span 
+                      class="font-medium text-[15px]"
+                      :class="isKeywordWithinLimit(index) ? 'text-gray-900' : 'text-gray-400'"
+                    >{{ data }}</span>
+                    <Tag 
+                      v-if="!isKeywordWithinLimit(index)" 
+                      value="Nieaktywne" 
+                      severity="warning"
+                      class="text-xs"
+                    />
+                    <i 
+                      v-if="isKeywordWithinLimit(index)"
+                      class="pi pi-pencil text-gray-300 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                    ></i>
                   </div>
                 </template>
                 <template #content="{ closeCallback }">
@@ -109,7 +139,12 @@
                 rounded 
                 aria-label="Usuń"
                 @click="confirmDelete(index)"
-                class="w-8 h-8 !p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                :class="[
+                  'w-8 h-8 !p-0 transition-colors',
+                  isKeywordWithinLimit(index) 
+                    ? 'text-gray-400 hover:text-red-600 hover:bg-red-50' 
+                    : 'text-gray-300 hover:text-red-500 hover:bg-red-50'
+                ]"
               />
             </template>
           </Column>
@@ -127,7 +162,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useConfirm } from 'primevue/useconfirm'
 import InputText from 'primevue/inputtext'
 import InputGroup from 'primevue/inputgroup'
@@ -138,6 +174,9 @@ import Inplace from 'primevue/inplace'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Badge from 'primevue/badge'
+import Tag from 'primevue/tag'
+import LimitWarningBanner from '../common/LimitWarningBanner.vue'
+import { useFeatures } from '../../../composables/useFeatures'
 
 const props = defineProps({
   keywords: {
@@ -148,9 +187,34 @@ const props = defineProps({
 
 const emit = defineEmits(['update:keywords'])
 const confirm = useConfirm()
+const router = useRouter()
+
+const { getLimit, getLimitStatus } = useFeatures()
 
 const newKeyword = ref('')
 const editingValues = ref({})
+
+// Get keyword limit status
+const keywordLimitStatus = computed(() => {
+  const status = getLimitStatus('keywords', 'maxKeywords', props.keywords.length)
+  console.log('🔍 Keyword Limit Debug:', {
+    currentCount: props.keywords.length,
+    limit: getLimit('keywords', 'maxKeywords'),
+    status: status
+  })
+  return status
+})
+
+// Check if keyword is within limit
+const isKeywordWithinLimit = (index) => {
+  const limit = getLimit('keywords', 'maxKeywords')
+  return limit === null || limit >= 999 || index < limit
+}
+
+// Handle upgrade button click
+const handleUpgrade = () => {
+  router.push({ name: 'settings', query: { tab: 'subscription' } })
+}
 
 const addKeyword = () => {
   const trimmed = newKeyword.value.trim()
