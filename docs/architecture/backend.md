@@ -1,70 +1,74 @@
-# Backend (Convex)
+# Backend Architecture (Convex)
 
-## Schema Design
-The database is centered around the **Organization** (Tenant) model.
+GTRACK uses [Convex](https://convex.dev) as its backend infrastructure. Convex provides a real-time database, serverless functions, and file storage in a single platform.
 
-### Core Tables
+## Database Schema
 
-#### `organizations`
-The root entity for multi-tenancy.
-```typescript
-{
-  name: string,
-  slug: string,
-  plan: "basic" | "professional" | "enterprise",
-  settings: { timezone: string, language: string },
-  // Business Data
-  businessProfile: { placeId: string, cid: string, ... },
-  // Configuration
-  gridSettings: { maxSize: number, stepKm: number, ... },
-  featureFlags: { autoReply: boolean, ... }
-}
-```
+The database is designed around a multi-tenant architecture where the **Organization** is the central entity.
 
-#### `keywords`
-Monitored phrases for ranking.
-```typescript
-{
-  orgId: Id<"organizations">,
-  keyword: string,
-  createdAt: number
-}
-```
+### 1. Organizations (`organizations`)
+The root entity representing a tenant (business).
 
-#### `seoAudits`
-History of on-page audits.
-```typescript
-{
-  orgId: Id<"organizations">,
-  url: string,
-  status: "pending" | "completed" | "failed",
-  fullResult: object // JSON from DataForSEO
-}
-```
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `name` | `string` | Display name of the business. |
+| `slug` | `string` | Unique identifier for URLs (indexed). |
+| `plan` | `union` | Subscription tier: `'basic'`, `'professional'`, `'enterprise'`. |
+| `settings` | `object` | Global preferences (`timezone`, `language`). |
+| `businessProfile` | `object` | Google Maps data (`placeId`, `cid`, `isConnected`). |
+| `gridSettings` | `object` | Scanning config (`maxSize`, `stepKm`, `centerName`, `lat`, `lng`). |
+| `featureFlags` | `object` | Toggles for specific features (`autoReply`, `photoMonitoring`, etc.). |
 
-## Integration Patterns
+### 2. Users (`users`)
+Users are associated with organizations.
 
-### Queries (Read)
-We use `convex.onUpdate` for real-time data subscriptions.
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `tokenIdentifier` | `string` | External Auth ID (e.g., from Clerk/Auth0). |
+| `orgId` | `id` | Reference to the `organizations` table. |
+| `role` | `union` | `'admin'` or `'member'`. |
 
-```javascript
-// Frontend usage
-onMounted(() => {
-  unsubscribe = convex.onUpdate(api.keywords.getKeywords, {}, (data) => {
-    keywords.value = data;
-  });
-});
-```
+### 3. Keywords (`keywords`)
+List of phrases monitored for ranking.
 
-### Mutations (Write)
-We use `convex.mutation` for data modification.
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `orgId` | `id` | Owner organization. |
+| `keyword` | `string` | The search phrase. |
+| `createdAt` | `number` | Timestamp. |
 
-```javascript
-// Frontend usage
-await convex.mutation(api.keywords.addKeyword, {
-  keyword: "new keyword"
-});
-```
+### 4. SEO Audits (`seoAudits`)
+Stores the history and results of on-page SEO scans.
 
-### Actions (Async)
-Used for third-party API calls (e.g., DataForSEO). Actions fetch data and then call internal mutations to save it.
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `orgId` | `id` | Owner organization. |
+| `url` | `string` | The audited URL. |
+| `status` | `union` | `'pending'`, `'completed'`, `'failed'`. |
+| `dataForSeoTaskId` | `string` | ID from external API. |
+| `score` | `number` | Calculated SEO score (0-100). |
+| `fullResult` | `json` | Complete raw response from DataForSEO. |
+
+### 5. Feature Usage (`featureUsage`)
+Tracks consumption of limited resources (e.g., number of audits run).
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `featureKey` | `string` | Identifier (e.g., `'seo_audits'`). |
+| `periodStart` | `number` | Timestamp of the current billing period start. |
+| `count` | `number` | Current usage count. |
+
+## Functions Structure
+
+We organize backend logic into modular files within the `convex/` directory:
+
+- **`schema.ts`**: Database definitions.
+- **`organizations.ts`**: Tenant management, settings updates.
+- **`keywords.ts`**: Keyword CRUD operations.
+- **`seo.ts`**: Integration with DataForSEO (Actions) and audit storage (Mutations).
+- **`featureLimits.ts`**: Logic for enforcing plan limits.
+
+## Security & Access Control
+
+Currently, the application uses a simplified model where the "Current Organization" is often hardcoded or fetched via a single query (`organizations.getCurrent`).
+In production, every query and mutation validates the `ctx.auth` user and ensures they belong to the `orgId` they are trying to access.
