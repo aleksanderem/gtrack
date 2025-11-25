@@ -62,6 +62,7 @@ const businessConfig = ref({
   placeId: 'ChIJ...',
   cid: '',
   isConnected: false,
+  website: 'https://dublinpainters.ie',
   // Feature settings will be synced from global store
   autoReply: false,
   photoMonitoring: true,

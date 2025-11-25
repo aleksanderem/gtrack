@@ -45,6 +45,30 @@
       </template>
     </Card>
 
+    <!-- Sekcja Strony WWW -->
+    <Card class="border border-gray-200 !bg-white shadow-none">
+      <template #title>
+        <div class="flex items-center gap-2 text-xl font-semibold text-gray-900">
+          <i class="pi pi-globe text-blue-500"></i>
+          Strona WWW
+        </div>
+        <p class="text-sm font-normal text-gray-500 mt-1">
+          Adres strony internetowej powiązanej z wizytówką.
+        </p>
+      </template>
+      <template #content>
+        <div class="flex flex-col gap-2 mt-4">
+            <label class="text-sm font-medium text-gray-700">Adres URL</label>
+            <InputGroup>
+              <InputGroupAddon>https://</InputGroupAddon>
+              <InputText v-model="config.website" placeholder="www.twojanazwa.pl" class="w-full" />
+              <Button icon="pi pi-external-link" severity="secondary" v-tooltip="'Otwórz'" @click="openWebsite" :disabled="!config.website" />
+            </InputGroup>
+            <small class="text-xs text-gray-500">Ten adres będzie używany w materiałach marketingowych i na landing page'u.</small>
+        </div>
+      </template>
+    </Card>
+
     <!-- Sekcja Integracji -->
     <Card class="border border-gray-200 !bg-white shadow-none">
       <template #title>
@@ -280,6 +304,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import InputText from 'primevue/inputtext'
 import InputGroup from 'primevue/inputgroup'
+import InputGroupAddon from 'primevue/inputgroupaddon'
 import Button from 'primevue/button'
 import Badge from 'primevue/badge'
 import Avatar from 'primevue/avatar'
@@ -308,6 +333,7 @@ const props = defineProps({
     default: () => ({
       placeId: '',
       cid: '',
+      website: '',
       isConnected: false,
       autoReply: false,
       syncPhotos: true,
@@ -368,6 +394,16 @@ const updateFeature = async (configKey, value) => {
   // Update local config
   const newConfig = { ...config.value, [configKey]: value }
   emit('update:modelValue', newConfig)
+}
+
+const openWebsite = () => {
+  if (config.value.website) {
+    let url = config.value.website;
+    if (!url.startsWith('http')) {
+        url = 'https://' + url;
+    }
+    window.open(url, '_blank');
+  }
 }
 
 // Handle highlight from route query
