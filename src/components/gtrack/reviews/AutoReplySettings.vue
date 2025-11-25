@@ -19,7 +19,7 @@
             <div class="flex-1 flex flex-col gap-6">
 
             <!-- Main Settings -->
-            <Card id="main-settings" class="w-full scroll-mt-4">
+            <FeatureCard id="main-settings" always-available>
                 <template #title>
                     <div class="flex flex-col gap-1">
                         <span class="text-lg font-bold text-surface-900">Główne Ustawienia</span>
@@ -31,7 +31,8 @@
                         <!-- Enable Toggle -->
                         <div class="flex items-start gap-3">
                             <Checkbox 
-                                v-model="settings.enabled" 
+                                :modelValue="isAutoReplyEnabled"
+                                @update:modelValue="(value) => { settings.enabled = value; saveSettings(); }"
                                 :binary="true"
                                 inputId="enable-auto-reply"
                                 class="mt-1"
@@ -84,26 +85,35 @@
                         </div>
                     </div>
                 </template>
-            </Card>
+            </FeatureCard>
 
             <!-- Rules Section -->
-            <Card id="rules" class="w-full scroll-mt-4">
+            <FeatureCard 
+                id="rules" 
+                feature-key="autoReply"
+                feature-description="Reguły auto-odpowiedzi są dostępne w planie Professional. Zwiększ pakiet, aby korzystać z zaawansowanych reguł automatycznego odpowiadania."
+            >
                 <template #title>
                     <div class="flex items-center justify-between w-full">
                         <div class="flex items-center gap-2">
                             <i class="pi pi-list-check text-primary"></i>
                             <span class="text-lg font-bold text-surface-900">Reguły Odpowiadania</span>
                         </div>
-                        <Button 
-                            label="Dodaj regułę" 
-                            icon="pi pi-plus" 
-                            size="small" 
-                            @click="openRuleDialog(null)"
-                        />
+                        <div class="flex items-center gap-3">
+                            <Button 
+                                label="Dodaj regułę" 
+                                icon="pi pi-plus" 
+                                size="small" 
+                                @click="openRuleDialog(null)"
+                            />
+                            <span v-if="getCurrentLimit('autoReplyRules', 'maxRules')" class="text-sm text-surface-600">
+                                {{ rules.length }}/{{ getCurrentLimit('autoReplyRules', 'maxRules') }} reguł
+                            </span>
+                        </div>
                     </div>
                 </template>
                 <template #content>
-                    <div v-if="!settings.enabled && rules.length > 0" class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div v-if="!isAutoReplyEnabled && rules.length > 0" class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                         <div class="flex items-center gap-2 text-amber-700">
                             <i class="pi pi-info-circle"></i>
                             <span class="text-sm font-semibold">Auto-odpowiedzi są wyłączone</span>
@@ -124,9 +134,20 @@
                             <div class="flex items-start justify-between gap-4">
                                 <div class="flex-1 flex flex-col gap-2">
                                     <div class="flex items-center gap-2">
-                                        <ToggleSwitch v-model="rule.enabled" @update:modelValue="() => saveRule(rule)" size="small" />
+                                        <i 
+                                            v-if="!isAutoReplyAvailable" 
+                                            class="pi pi-lock text-gray-400 text-sm"
+                                            v-tooltip.top="getAutoReplyLockReason"
+                                        ></i>
+                                        <ToggleSwitch 
+                                            :modelValue="!isAutoReplyAvailable ? false : rule.enabled" 
+                                            @update:modelValue="(val) => saveRule({ ...rule, enabled: val })" 
+                                            size="small"
+                                            :disabled="!isAutoReplyAvailable"
+                                            v-tooltip.top="!isAutoReplyAvailable ? getAutoReplyLockReason : ''"
+                                        />
                                         <span class="font-semibold text-sm">{{ rule.name }}</span>
-                                        <Tag v-if="!rule.enabled" value="Wyłączona" severity="secondary" class="text-sm" />
+                                        <Tag v-if="!rule.enabled || !isAutoReplyAvailable" value="Wyłączona" severity="secondary" class="text-sm" />
                                     </div>
                                     <div class="text-sm text-surface-600 font-normal ml-8">
                                         <div>Jeśli: 
@@ -175,10 +196,14 @@
                         </div>
                     </div>
                 </template>
-            </Card>
+            </FeatureCard>
 
             <!-- Safety Settings -->
-            <Card id="safety" class="w-full scroll-mt-4">
+            <FeatureCard 
+                id="safety" 
+                feature-key="autoReply"
+                feature-description="Ustawienia zabezpieczeń auto-odpowiedzi są dostępne w planie Professional. Zwiększ pakiet, aby korzystać z zaawansowanych zabezpieczeń."
+            >
                 <template #title>
                     <div class="flex items-center gap-2">
                         <i class="pi pi-shield text-primary"></i>
@@ -252,10 +277,14 @@
                         </div>
                     </div>
                 </template>
-            </Card>
+            </FeatureCard>
 
             <!-- Available Templates Preview -->
-            <Card id="templates" class="w-full scroll-mt-4">
+            <FeatureCard 
+                id="templates" 
+                feature-key="autoReply"
+                feature-description="Podgląd szablonów dla auto-odpowiedzi jest dostępny w planie Professional. Zwiększ pakiet, aby korzystać z tej funkcji."
+            >
                 <template #title>
                     <div class="flex items-center gap-2">
                         <i class="pi pi-file-edit text-primary"></i>
@@ -307,7 +336,7 @@
                         </div>
                     </div>
                 </template>
-            </Card>
+            </FeatureCard>
 
             <!-- Rule Dialog -->
             <Dialog 
@@ -412,11 +441,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
+import { useFeatureSettings } from '../../../stores/featureSettings';
 import Card from 'primevue/card';
+import FeatureCard from './FeatureCard.vue';
 import ToggleSwitch from 'primevue/toggleswitch';
 import Checkbox from 'primevue/checkbox';
 import InputNumber from 'primevue/inputnumber';
@@ -432,10 +463,30 @@ import Menu from 'primevue/menu';
 import TinyEditor from '@juit/vue-tiny-editor';
 import '@juit/vue-tiny-editor/style.css';
 import { ReviewsService } from '../../../services/ReviewsService';
+import { useFeatureLimits } from '../../../composables/useFeatureLimits';
+import { useFeatureFlags, FEATURES } from '../../../composables/useFeatureFlags';
 
 const router = useRouter();
 const toast = useToast();
 const confirm = useConfirm();
+const { featureSettings, isFeatureEnabled, updateFeature } = useFeatureSettings();
+const { getCurrentLimit, isLimitExceeded, getLimitMessage } = useFeatureLimits();
+const { isFeatureAvailable, isFeatureLocked } = useFeatureFlags();
+
+// Computed property to check if auto-reply is enabled globally
+const isAutoReplyEnabled = computed(() => isFeatureEnabled('autoReply'));
+
+// Check if auto-reply feature is available in the plan
+const isAutoReplyAvailable = computed(() => isFeatureAvailable(FEATURES.AUTO_REPLY));
+
+// Get lock reason for auto-reply feature
+const getAutoReplyLockReason = computed(() => {
+  const autoReplyFeature = FEATURES.AUTO_REPLY;
+  if (isFeatureLocked(autoReplyFeature)) {
+    return `Auto-odpowiedzi są dostępne w planie ${autoReplyFeature.planName}. Zwiększ pakiet, aby używać tej funkcji.`;
+  }
+  return '';
+});
 
 const settings = ref({
   enabled: false,
@@ -454,67 +505,69 @@ const rules = ref([]);
 const templates = ref([]);
 const loading = ref(true);
 
-const menuItems = ref([
-    {
-        label: 'Główne Ustawienia',
-        icon: 'pi pi-cog',
-        command: () => {
-            const element = document.getElementById('main-settings');
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                setTimeout(() => {
-                    window.scrollBy(0, -52); // Offset for top navigation bar
-                }, 100);
+const menuItems = computed(() => {
+    return [
+        {
+            label: 'Główne Ustawienia',
+            icon: 'pi pi-cog',
+            command: () => {
+                const element = document.getElementById('main-settings');
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    setTimeout(() => {
+                        window.scrollBy(0, -52); // Offset for top navigation bar
+                    }, 100);
+                }
+            }
+        },
+        {
+            label: 'Reguły Odpowiadania',
+            icon: 'pi pi-sliders-h',
+            command: () => {
+                const element = document.getElementById('rules');
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    setTimeout(() => {
+                        window.scrollBy(0, -52); // Offset for top navigation bar
+                    }, 100);
+                }
+            }
+        },
+        {
+            label: 'Zabezpieczenia',
+            icon: 'pi pi-shield',
+            command: () => {
+                const element = document.getElementById('safety');
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    setTimeout(() => {
+                        window.scrollBy(0, -52); // Offset for top navigation bar
+                    }, 100);
+                }
+            }
+        },
+        {
+            label: 'Dostępne Szablony',
+            icon: 'pi pi-file-edit',
+            command: () => {
+                const element = document.getElementById('templates');
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    setTimeout(() => {
+                        window.scrollBy(0, -52); // Offset for top navigation bar
+                    }, 100);
+                }
+            }
+        },
+        {
+            label: 'Historia Auto-Odpowiedzi',
+            icon: 'pi pi-history',
+            command: () => {
+                navigateToHistory();
             }
         }
-    },
-    {
-        label: 'Reguły Odpowiadania',
-        icon: 'pi pi-sliders-h',
-        command: () => {
-            const element = document.getElementById('rules');
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                setTimeout(() => {
-                    window.scrollBy(0, -52); // Offset for top navigation bar
-                }, 100);
-            }
-        }
-    },
-    {
-        label: 'Zabezpieczenia',
-        icon: 'pi pi-shield',
-        command: () => {
-            const element = document.getElementById('safety');
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                setTimeout(() => {
-                    window.scrollBy(0, -52); // Offset for top navigation bar
-                }, 100);
-            }
-        }
-    },
-    {
-        label: 'Dostępne Szablony',
-        icon: 'pi pi-file-edit',
-        command: () => {
-            const element = document.getElementById('templates');
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                setTimeout(() => {
-                    window.scrollBy(0, -52); // Offset for top navigation bar
-                }, 100);
-            }
-        }
-    },
-    {
-        label: 'Historia Auto-Odpowiedzi',
-        icon: 'pi pi-history',
-        command: () => {
-            navigateToHistory();
-        }
-    }
-]);
+    ];
+});
 
 // Available variables for mentions
 const availableVariables = ref([
@@ -652,7 +705,10 @@ const getExampleTemplateForRule = (rule) => {
 
 const loadSettings = async () => {
   try {
-    settings.value = await ReviewsService.getAutoReplySettings();
+    const loadedSettings = await ReviewsService.getAutoReplySettings();
+    // Sync enabled state with global feature settings
+    loadedSettings.enabled = isFeatureEnabled('autoReply');
+    settings.value = loadedSettings;
   } catch (e) {
     console.error(e);
     toast.add({ severity: 'error', summary: 'Błąd', detail: 'Nie udało się załadować ustawień', life: 3000 });
@@ -662,6 +718,9 @@ const loadSettings = async () => {
 const saveSettings = async () => {
   try {
     await ReviewsService.saveAutoReplySettings(settings.value);
+    // Update global feature settings
+    const { updateFeature } = useFeatureSettings();
+    await updateFeature('autoReply', settings.value.enabled);
     toast.add({ severity: 'success', summary: 'Zapisano', detail: 'Ustawienia zostały zapisane', life: 2000 });
   } catch (e) {
     console.error(e);
@@ -672,6 +731,34 @@ const saveSettings = async () => {
 const loadRules = async () => {
   try {
     rules.value = await ReviewsService.getAutoReplyRules();
+    
+    // Disable all rules if auto-reply feature is not available
+    if (!isAutoReplyAvailable.value) {
+      const enabledRules = rules.value.filter(r => r.enabled === true);
+      if (enabledRules.length > 0) {
+        for (const rule of enabledRules) {
+          try {
+            const updated = { ...rule, enabled: false };
+            await ReviewsService.saveAutoReplyRule(updated);
+            const index = rules.value.findIndex(r => r.id === rule.id);
+            if (index !== -1) {
+              rules.value[index] = updated;
+            }
+          } catch (e) {
+            console.error('Failed to disable rule', e);
+          }
+        }
+        
+        if (enabledRules.length > 0) {
+          toast.add({
+            severity: 'warn',
+            summary: 'Reguły wyłączone',
+            detail: `${enabledRules.length} reguł${enabledRules.length === 1 ? 'a' : enabledRules.length < 5 ? 'y' : ''} zostało wyłączonych z powodu braku dostępu do funkcji auto-odpowiedzi w Twoim planie.`,
+            life: 6000
+          });
+        }
+      }
+    }
   } catch (e) {
     console.error(e);
     toast.add({ severity: 'error', summary: 'Błąd', detail: 'Nie udało się załadować reguł', life: 3000 });
@@ -687,8 +774,25 @@ const loadTemplates = async () => {
 };
 
 const saveRule = async (rule) => {
+  // Force disable if auto-reply feature is not available
+  if (!isAutoReplyAvailable.value && rule.enabled === true) {
+    rule.enabled = false;
+    toast.add({
+      severity: 'warn',
+      summary: 'Funkcja niedostępna',
+      detail: getAutoReplyLockReason.value,
+      life: 5000
+    });
+  }
+  
   try {
-    await ReviewsService.saveAutoReplyRule(rule);
+    // Ensure rule is disabled if feature is not available
+    const ruleToSave = { ...rule };
+    if (!isAutoReplyAvailable.value) {
+      ruleToSave.enabled = false;
+    }
+    
+    await ReviewsService.saveAutoReplyRule(ruleToSave);
     await loadRules();
     toast.add({ severity: 'success', summary: 'Zapisano', detail: 'Reguła została zapisana', life: 2000 });
   } catch (e) {
@@ -754,6 +858,21 @@ const saveRuleFromDialog = async () => {
     return;
   }
   
+  // Check limit before saving (only for new rules)
+  if (!editingRule.value) {
+    const currentCount = rules.value.length;
+    if (isLimitExceeded('autoReplyRules', 'maxRules', currentCount)) {
+      const limit = getCurrentLimit('autoReplyRules', 'maxRules');
+      toast.add({ 
+        severity: 'warn', 
+        summary: 'Limit osiągnięty', 
+        detail: `Osiągnięto limit ${limit} reguł dla Twojego planu. Zaktualizuj plan, aby zwiększyć limit.`, 
+        life: 5000 
+      });
+      return;
+    }
+  }
+  
   // Build rating condition
   if (ratingConditionOperator.value) {
     if (ratingConditionOperator.value === 'between') {
@@ -782,6 +901,17 @@ const saveRuleFromDialog = async () => {
     ruleDialogVisible.value = false;
     editingRule.value = null;
     newRule.value = null;
+    
+    // Show limit info if close to limit
+    const limitMessage = getLimitMessage('autoReplyRules', 'maxRules', rules.value.length);
+    if (limitMessage && limitMessage.canProceed) {
+      toast.add({ 
+        severity: limitMessage.severity, 
+        summary: limitMessage.summary, 
+        detail: limitMessage.detail, 
+        life: 3000 
+      });
+    }
   } catch (e) {
     // Error already handled in saveRule
   }
@@ -816,6 +946,20 @@ const navigateToHistory = () => {
   router.push({ name: 'reviews-auto-reply-history', params: { locationId } });
 };
 
+
+// Watch for changes in global feature settings and sync local settings
+watch(() => featureSettings.value.autoReply, (newValue) => {
+  if (settings.value.enabled !== newValue) {
+    settings.value.enabled = newValue;
+  }
+});
+
+// Watch local settings.enabled and sync to global store
+watch(() => settings.value.enabled, async (newValue) => {
+  if (featureSettings.value.autoReply !== newValue) {
+    await updateFeature('autoReply', newValue);
+  }
+});
 
 onMounted(async () => {
   loading.value = true;

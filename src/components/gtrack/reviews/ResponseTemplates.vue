@@ -12,6 +12,29 @@
             }">
             <template #header>
                 <div class="flex flex-col gap-3">
+                    <!-- Limit Warning Message -->
+                    <div v-if="showLimitMessage" class="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                        <div class="flex items-start gap-2">
+                            <i class="pi pi-exclamation-triangle text-amber-600 mt-0.5"></i>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-amber-800">
+                                    <span v-if="limitExceededInfo">Przekroczono limit szablonów</span>
+                                    <span v-else>Limit szablonów osiągnięty</span>
+                                </p>
+                                <p class="text-sm text-amber-700 mt-1">
+                                    <span v-if="limitExceededInfo">
+                                        Masz <strong>{{ limitExceededInfo.excess }}</strong> szablon{{ limitExceededInfo.excess === 1 ? '' : limitExceededInfo.excess < 5 ? 'y' : 'ów' }} więcej niż pozwala Twój plan (limit: {{ limitExceededInfo.limit }}). 
+                                        Nadmiarowe szablony zostały wyłączone. 
+                                    </span>
+                                    <span v-else>
+                                        Osiągnięto limit <strong>{{ templateLimit }}</strong> aktywnych szablonów dla Twojego planu. 
+                                        Niektóre szablony są wyłączone z uwagi na limit konta.
+                                    </span>
+                                    <a href="#" @click.prevent="navigateToSettings" class="underline font-semibold">Zwiększ pakiet</a>, aby używać większej ilości szablonów.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                     <div class="flex justify-between items-center p-2">
                         <div class="flex gap-2">
                             <Button type="button" icon="pi pi-filter-slash" label="Wyczyść" outlined @click="clearFilter()" size="small" />
@@ -22,7 +45,12 @@
                                 <InputText v-model="filters['global'].value" placeholder="Szukaj..." size="small" />
                             </IconField>
                         </div>
-                        <Button label="Nowy szablon" icon="pi pi-plus" size="small" @click="createNewTemplate" />
+                        <div class="flex items-center gap-3">
+                            <Button label="Nowy szablon" icon="pi pi-plus" size="small" @click="createNewTemplate" />
+                            <span v-if="getCurrentLimit('templates', 'maxTemplates')" class="text-sm text-surface-600">
+                                {{ activeTemplatesCount }}/{{ getCurrentLimit('templates', 'maxTemplates') }} aktywnych szablonów
+                            </span>
+                        </div>
                     </div>
                     <div v-if="selectedTemplates && selectedTemplates.length > 0" class="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                         <span class="text-sm font-semibold text-blue-700">{{ selectedTemplates.length }} szablon{{ selectedTemplates.length === 1 ? '' : selectedTemplates.length < 5 ? 'y' : 'ów' }} zaznaczon{{ selectedTemplates.length === 1 ? 'y' : 'e' }}</span>
@@ -31,9 +59,9 @@
                             <Button label="Zmiana auto-odpowiedzi" icon="pi pi-sparkles" size="small" outlined @click="showBulkAutoReplyDialog" />
                             <Button label="Zmiana oceny" icon="pi pi-star" size="small" outlined @click="showBulkRatingDialog" />
                             <Button label="Usuń" icon="pi pi-trash" size="small" severity="danger" outlined @click="confirmBulkDelete" />
-                        </div>
-                    </div>
-                </div>
+    </div>
+    </div>
+    </div>
             </template>
             <template #empty> Nie znaleziono szablonów. </template>
             <template #loading> Ładowanie danych... </template>
@@ -42,13 +70,25 @@
 
             <Column field="active" header="Aktywny" style="width: 8rem" :pt="{ headerContent: { class: 'font-normal' } }">
                 <template #body="{ data }">
-                    <ToggleSwitch v-model="data.active" @update:modelValue="(val) => saveTemplateToggle(data, 'active', val)" />
+                    <div class="flex items-center gap-2">
+                        <i 
+                            v-if="isActiveToggleLocked(data)" 
+                            class="pi pi-lock text-gray-400 text-sm"
+                            v-tooltip.top="getActiveToggleLockReason(data)"
+                        ></i>
+                        <ToggleSwitch 
+                            :modelValue="isActiveToggleLocked(data) ? false : data.active" 
+                            @update:modelValue="(val) => saveTemplateToggle(data, 'active', val)"
+                            :disabled="isTemplateDisabled(data) || isActiveToggleLocked(data)"
+                            v-tooltip.top="isActiveToggleLocked(data) ? getActiveToggleLockReason(data) : ''"
+                        />
+                    </div>
                 </template>
             </Column>
 
             <Column field="name" header="Nazwa" sortable style="min-width: 14rem" :pt="{ headerContent: { class: 'font-normal' } }">
                 <template #body="{ data }">
-                    <span class="font-semibold text-sm">{{ data.name }}</span>
+                    <span class="font-semibold text-sm" :class="{ 'opacity-50': isTemplateDisabled(data) }">{{ data.name }}</span>
                 </template>
                 <template #filter="{ filterModel }">
                     <InputText v-model="filterModel.value" type="text" placeholder="Szukaj po nazwie" class="p-column-filter text-sm" size="small" />
@@ -57,7 +97,7 @@
 
             <Column field="content" header="Treść" style="min-width: 20rem" :pt="{ headerContent: { class: 'font-normal' } }">
                 <template #body="{ data }">
-                    <div class="text-sm m-0 text-surface-600 leading-relaxed" style="max-height: 4.5rem; overflow: hidden;">
+                    <div class="text-sm m-0 text-surface-600 leading-relaxed" style="max-height: 4.5rem; overflow: hidden;" :class="{ 'opacity-50': isTemplateDisabled(data) }">
                         <TinyEditor 
                             :modelValue="data.content || ''"
                             :mentions="mentionsMap"
@@ -80,28 +120,43 @@
                     </div>
                 </template>
                 <template #body="{ data }">
-                    <div class="flex items-center gap-2">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-purple-500">
+                    <div class="flex items-center gap-2" :class="{ 'opacity-50': isTemplateDisabled(data) || !isAutoReplyAvailable }">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" :class="isAutoReplyAvailable ? 'text-purple-500' : 'text-gray-400'">
                             <path fill-rule="evenodd" clip-rule="evenodd" d="M10.56 10.7834C10.56 10.7834 10.56 10.7834 10.56 10.7834C10.5559 10.7859 10.5327 10.8006 10.4779 10.8494C10.4045 10.915 10.312 11.0071 10.1596 11.1596C10.0071 11.312 9.91503 11.4045 9.84945 11.4779C9.80059 11.5327 9.78586 11.5559 9.78342 11.56C9.78342 11.56 9.78342 11.56 9.78342 11.56C9.73886 11.6504 9.73886 11.7564 9.78342 11.8467C9.78342 11.8467 9.78342 11.8467 9.78342 11.8467C9.78585 11.8509 9.80058 11.8741 9.84945 11.9288C9.91503 12.0023 10.0071 12.0948 10.1596 12.2472L11.7775 13.8652L12.8652 12.7775L11.2472 11.1596C11.0948 11.0071 11.0023 10.915 10.9288 10.8494C10.8741 10.8006 10.8509 10.7859 10.8467 10.7834C10.7564 10.7389 10.6504 10.7389 10.56 10.7834ZM13.9258 13.8382L12.8382 14.9258L18.7528 20.8404C18.9052 20.9929 18.9977 21.085 19.0712 21.1506C19.1259 21.1994 19.1491 21.2142 19.1533 21.2166C19.2436 21.2611 19.3496 21.2611 19.44 21.2166C19.4441 21.2142 19.4673 21.1994 19.5221 21.1506C19.5955 21.085 19.688 20.9929 19.8404 20.8404C19.9929 20.688 20.085 20.5955 20.1505 20.5221C20.1994 20.4674 20.2141 20.4441 20.2166 20.44C20.2611 20.3496 20.2611 20.2436 20.2166 20.1533C20.2141 20.1491 20.1994 20.1259 20.1505 20.0712C20.085 19.9977 19.9929 19.9052 19.8404 19.7528L13.9258 13.8382ZM9.89343 9.43968C10.4038 9.18677 11.003 9.18677 11.5133 9.43968C11.786 9.57479 12.0183 9.80812 12.2486 10.0395C12.2684 10.0593 12.2881 10.0791 12.3079 10.0989L20.9011 18.6921C20.9209 18.7119 20.9407 18.7316 20.9605 18.7514C21.1919 18.9817 21.4252 19.214 21.5603 19.4867C21.8132 19.997 21.8132 20.5962 21.5603 21.1066C21.4252 21.3792 21.1919 21.6115 20.9605 21.8419C20.9407 21.8616 20.9209 21.8814 20.9011 21.9011C20.8813 21.9209 20.8616 21.9407 20.8418 21.9605C20.6115 22.1919 20.3792 22.4252 20.1066 22.5603C19.5962 22.8132 18.997 22.8132 18.4867 22.5603C18.214 22.4252 17.9817 22.1919 17.7514 21.9605C17.7316 21.9407 17.7119 21.9209 17.6921 21.9011L9.09889 13.3079C9.07914 13.2881 9.05931 13.2684 9.03947 13.2486C8.80812 13.0183 8.57479 12.786 8.43968 12.5133C8.18677 12.003 8.18677 11.4038 8.43968 10.8934C8.57479 10.6208 8.80812 10.3885 9.03947 10.1581C9.05931 10.1384 9.07914 10.1186 9.0989 10.0989C9.11865 10.0791 9.13839 10.0593 9.15815 10.0395C9.38847 9.80812 9.62078 9.57479 9.89343 9.43968Z" fill="currentColor"/>
                             <path opacity="0.4" fill-rule="evenodd" clip-rule="evenodd" d="M6.70339 3.73972C6.59448 3.4454 6.31383 3.25 6 3.25C5.68617 3.25 5.40552 3.4454 5.29661 3.73972L5.07553 4.33717C4.76183 5.18495 4.67053 5.38548 4.528 5.528C4.38548 5.67053 4.18495 5.76183 3.33717 6.07553L2.73972 6.29661C2.4454 6.40552 2.25 6.68617 2.25 7C2.25 7.31383 2.4454 7.59448 2.73972 7.70339L3.33717 7.92447C4.18495 8.23817 4.38548 8.32947 4.528 8.472C4.67053 8.61452 4.76183 8.81505 5.07553 9.66283L5.29661 10.2603C5.40552 10.5546 5.68617 10.75 6 10.75C6.31383 10.75 6.59448 10.5546 6.70339 10.2603L6.92447 9.66283C7.23817 8.81505 7.32947 8.61452 7.47199 8.472C7.61452 8.32947 7.81505 8.23817 8.66282 7.92447L9.26028 7.70339C9.5546 7.59448 9.75 7.31383 9.75 7C9.75 6.68617 9.5546 6.40552 9.26028 6.29661L8.66283 6.07553C7.81505 5.76183 7.61452 5.67053 7.472 5.52801C7.32947 5.38548 7.23817 5.18495 6.92447 4.33717L6.70339 3.73972ZM5.58866 6.58867C5.75446 6.42287 5.88584 6.23409 6 6.02334C6.11416 6.23409 6.24554 6.42287 6.41133 6.58867C6.57713 6.75446 6.76591 6.88584 6.97666 7C6.76591 7.11416 6.57713 7.24554 6.41133 7.41134C6.24554 7.57713 6.11416 7.76591 6 7.97666C5.88584 7.76591 5.75446 7.57713 5.58866 7.41134C5.42287 7.24554 5.23409 7.11416 5.02334 7C5.23409 6.88584 5.42287 6.75446 5.58866 6.58867ZM17.7034 1.73972C17.5945 1.4454 17.3138 1.25 17 1.25C16.6862 1.25 16.4055 1.4454 16.2966 1.73972L16.0018 2.53633C15.5915 3.64524 15.4519 3.97634 15.2141 4.21412C14.9763 4.45189 14.6452 4.59151 13.5363 5.00184L12.7397 5.29661C12.4454 5.40552 12.25 5.68617 12.25 6C12.25 6.31383 12.4454 6.59448 12.7397 6.70339L13.5363 6.99816C14.6452 7.4085 14.9763 7.54811 15.2141 7.78588C15.4519 8.02366 15.5915 8.35476 16.0018 9.46368L16.2966 10.2603C16.4055 10.5546 16.6862 10.75 17 10.75C17.3138 10.75 17.5945 10.5546 17.7034 10.2603L17.9982 9.46368C18.4085 8.35476 18.5481 8.02366 18.7859 7.78588C19.0237 7.54811 19.3548 7.4085 20.4637 6.99816L21.2603 6.70339C21.5546 6.59448 21.75 6.31383 21.75 6C21.75 5.68617 21.5546 5.40552 21.2603 5.29661L20.4637 5.00184C19.3548 4.59151 19.0237 4.45189 18.7859 4.21412C18.5481 3.97634 18.4085 3.64524 17.9982 2.53633L17.7034 1.73972ZM16.2748 5.27478C16.5873 4.96223 16.8013 4.58242 17 4.11891C17.1987 4.58242 17.4127 4.96223 17.7252 5.27478C18.0378 5.58732 18.4176 5.80129 18.8811 6C18.4176 6.19871 18.0378 6.41268 17.7252 6.72522C17.4127 7.03777 17.1987 7.41758 17 7.88109C16.8013 7.41758 16.5873 7.03777 16.2748 6.72522C15.9622 6.41268 15.5824 6.19871 15.1189 6C15.5824 5.80129 15.9622 5.58732 16.2748 5.27478Z" fill="currentColor"/>
                         </svg>
-                        <ToggleSwitch v-model="data.auto_reply" @update:modelValue="(val) => saveTemplateToggle(data, 'auto_reply', val)" class="auto-reply-toggle" />
+                        <div class="flex items-center gap-2">
+                            <i 
+                                v-if="!isAutoReplyAvailable" 
+                                class="pi pi-lock text-gray-400 text-sm"
+                                v-tooltip.top="getAutoReplyLockReason"
+                            ></i>
+                            <ToggleSwitch 
+                                :modelValue="!isAutoReplyAvailable ? false : data.auto_reply" 
+                                @update:modelValue="(val) => saveTemplateToggle(data, 'auto_reply', val)" 
+                                class="auto-reply-toggle"
+                                :disabled="isTemplateDisabled(data) || !isAutoReplyAvailable"
+                                v-tooltip.top="!isAutoReplyAvailable ? getAutoReplyLockReason : ''"
+                            />
+                        </div>
                     </div>
                 </template>
             </Column>
 
             <Column field="rating" header="Ocena" sortable style="min-width: 10rem" :showFilterMatchModes="false" :pt="{ headerContent: { class: 'font-normal' } }">
                 <template #body="{ data }">
-                    <Rating 
-                      :modelValue="data.rating" 
-                      :readonly="true" 
-                      :cancel="false" 
-                      class="text-xs" 
-                      :pt="{ 
-                        onIcon: 'text-yellow-500', 
-                        offIcon: 'text-gray-300' 
-                      }" 
-                    />
+                    <div :class="{ 'opacity-50': isTemplateDisabled(data) }">
+                        <Rating 
+                          :modelValue="data.rating" 
+                          :readonly="true" 
+                          :cancel="false" 
+                          class="text-xs" 
+                          :pt="{ 
+                            onIcon: 'text-yellow-500', 
+                            offIcon: 'text-gray-300' 
+                          }" 
+                        />
+                    </div>
                 </template>
                 <template #filter="{ filterModel }">
                     <Select v-model="filterModel.value" :options="ratingOptions" optionLabel="label" optionValue="value" placeholder="Wybierz ocenę" showClear size="small" :pt="{ root: { class: 'text-sm' } }">
@@ -295,7 +350,12 @@
                             </p>
                         </div>
                         <div class="flex items-center gap-2">
-                            <ToggleSwitch v-model="selectedTemplate.active" @update:modelValue="(val) => saveTemplateToggle(selectedTemplate, 'active', val)" />
+                            <ToggleSwitch 
+                                :modelValue="isActiveToggleLocked(selectedTemplate) ? false : selectedTemplate.active" 
+                                @update:modelValue="(val) => saveTemplateToggle(selectedTemplate, 'active', val)"
+                                :disabled="isActiveToggleLocked(selectedTemplate)"
+                                v-tooltip.top="isActiveToggleLocked(selectedTemplate) ? getActiveToggleLockReason(selectedTemplate) : ''"
+                            />
                             <span class="text-sm text-surface-700">{{ selectedTemplate.active ? 'Aktywny' : 'Nieaktywny' }}</span>
                         </div>
                     </div>
@@ -309,7 +369,12 @@
                             </p>
                         </div>
                         <div class="flex items-center gap-2">
-                            <ToggleSwitch v-model="selectedTemplate.auto_reply" @update:modelValue="(val) => saveTemplateToggle(selectedTemplate, 'auto_reply', val)" />
+                            <ToggleSwitch 
+                                :modelValue="!isAutoReplyAvailable ? false : selectedTemplate.auto_reply" 
+                                @update:modelValue="(val) => saveTemplateToggle(selectedTemplate, 'auto_reply', val)"
+                                :disabled="!isAutoReplyAvailable"
+                                v-tooltip.top="!isAutoReplyAvailable ? getAutoReplyLockReason : ''"
+                            />
                             <span class="text-sm text-surface-700">{{ selectedTemplate.auto_reply ? 'Włączone' : 'Wyłączone' }}</span>
                         </div>
                     </div>
@@ -389,8 +454,13 @@
                         </p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <ToggleSwitch v-model="newTemplate.active" />
-                        <span class="text-sm text-surface-700">{{ newTemplate.active ? 'Aktywny' : 'Nieaktywny' }}</span>
+                        <ToggleSwitch 
+                            :modelValue="isActiveToggleLocked(newTemplate) ? false : newTemplate.active" 
+                            @update:modelValue="(val) => { if (!isActiveToggleLocked(newTemplate)) newTemplate.active = val; }"
+                            :disabled="isActiveToggleLocked(newTemplate)"
+                            v-tooltip.top="isActiveToggleLocked(newTemplate) ? getActiveToggleLockReason(newTemplate) : ''"
+                        />
+                        <span class="text-sm text-surface-700">{{ (isActiveToggleLocked(newTemplate) ? false : newTemplate.active) ? 'Aktywny' : 'Nieaktywny' }}</span>
                     </div>
                 </div>
 
@@ -402,10 +472,15 @@
                         </p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <ToggleSwitch v-model="newTemplate.auto_reply" />
-                        <span class="text-sm text-surface-700">{{ newTemplate.auto_reply ? 'Włączone' : 'Wyłączone' }}</span>
+                        <ToggleSwitch 
+                            :modelValue="!isAutoReplyAvailable ? false : newTemplate.auto_reply" 
+                            @update:modelValue="(val) => { if (isAutoReplyAvailable) newTemplate.auto_reply = val; }"
+                            :disabled="!isAutoReplyAvailable"
+                            v-tooltip.top="!isAutoReplyAvailable ? getAutoReplyLockReason : ''"
+                        />
+                        <span class="text-sm text-surface-700">{{ (!isAutoReplyAvailable ? false : newTemplate.auto_reply) ? 'Włączone' : 'Wyłączone' }}</span>
                     </div>
-                </div>
+        </div>
       </div>
 
       <template #footer>
@@ -438,8 +513,18 @@
                 Wybierz nową wartość auto-odpowiedzi dla {{ selectedTemplates.length }} zaznaczonych szablonów.
             </p>
             <div class="flex items-center gap-3">
-                <ToggleSwitch v-model="bulkAutoReplyValue" />
-                <span class="text-sm font-semibold">{{ bulkAutoReplyValue ? 'Włączone' : 'Wyłączone' }}</span>
+                <i 
+                    v-if="!isAutoReplyAvailable" 
+                    class="pi pi-lock text-gray-400 text-sm"
+                    v-tooltip.top="getAutoReplyLockReason"
+                ></i>
+                <ToggleSwitch 
+                    :modelValue="!isAutoReplyAvailable ? false : bulkAutoReplyValue" 
+                    @update:modelValue="(val) => { if (isAutoReplyAvailable) bulkAutoReplyValue = val; }"
+                    :disabled="!isAutoReplyAvailable"
+                    v-tooltip.top="!isAutoReplyAvailable ? getAutoReplyLockReason : ''"
+                />
+                <span class="text-sm font-semibold">{{ (!isAutoReplyAvailable ? false : bulkAutoReplyValue) ? 'Włączone' : 'Wyłączone' }}</span>
             </div>
         </div>
         <template #footer>
@@ -458,7 +543,7 @@
                 <Rating v-model="bulkRatingValue" :cancel="false" />
                 <span class="text-xs text-surface-500">{{ bulkRatingValue }} {{ bulkRatingValue === 1 ? 'gwiazdka' : bulkRatingValue < 5 ? 'gwiazdki' : 'gwiazdek' }}</span>
             </div>
-        </div>
+  </div>
         <template #footer>
             <Button label="Anuluj" icon="pi pi-times" text @click="bulkRatingDialogVisible = false" size="small" />
             <Button label="Zastosuj" icon="pi pi-check" @click="applyBulkRating" :loading="saving" size="small" />
@@ -489,9 +574,12 @@ import BlockUI from 'primevue/blockui';
 import ToggleSwitch from 'primevue/toggleswitch';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
+import { useRouter } from 'vue-router';
 import { ReviewsService } from '../../../services/ReviewsService';
 import TinyEditor from '@juit/vue-tiny-editor';
 import '@juit/vue-tiny-editor/style.css';
+import { useFeatureLimits } from '../../../composables/useFeatureLimits';
+import { useFeatureFlags, FEATURES } from '../../../composables/useFeatureFlags';
 
 const templates = ref([]);
 const loading = ref(true);
@@ -513,9 +601,26 @@ const bulkAutoReplyDialogVisible = ref(false);
 const bulkAutoReplyValue = ref(true);
 const bulkRatingDialogVisible = ref(false);
 const bulkRatingValue = ref(5);
+const router = useRouter();
 const confirm = useConfirm();
 const toast = useToast();
 const primevue = usePrimeVue();
+const { getCurrentLimit, isLimitExceeded, getLimitMessage } = useFeatureLimits();
+const { isFeatureLocked } = useFeatureFlags();
+
+// Check if auto-reply feature is available
+const isAutoReplyAvailable = computed(() => {
+  const autoReplyFeature = FEATURES.AUTO_REPLY;
+  return !isFeatureLocked(autoReplyFeature);
+});
+
+const getAutoReplyLockReason = computed(() => {
+  const autoReplyFeature = FEATURES.AUTO_REPLY;
+  if (isFeatureLocked(autoReplyFeature)) {
+    return `Auto-odpowiedzi są dostępne w planie ${autoReplyFeature.planName}. Zwiększ pakiet, aby używać tej funkcji.`;
+  }
+  return null;
+});
 
 // Editing state
 const editingName = ref('');
@@ -571,6 +676,41 @@ const ratingOptions = [
 ];
 
 const saveTemplateToggle = async (template, field, value) => {
+    // If trying to enable auto-reply, check if feature is available
+    if (field === 'auto_reply' && value === true && !isAutoReplyAvailable.value) {
+        // Force disable auto-reply if feature is not available
+        value = false;
+        toast.add({
+            severity: 'warn',
+            summary: 'Funkcja niedostępna',
+            detail: getAutoReplyLockReason.value,
+            life: 5000
+        });
+    }
+    
+    // If trying to activate a template, check limit first
+    if (field === 'active' && value === true) {
+        const currentActiveCount = templates.value.filter(t => t.active && t.id !== template.id).length;
+        if (templateLimit.value && currentActiveCount >= templateLimit.value) {
+            // Force disable if limit is reached
+            value = false;
+            toast.add({
+                severity: 'warn',
+                summary: 'Limit osiągnięty',
+                detail: `Osiągnięto limit ${templateLimit.value} aktywnych szablonów. Wyłącz inne szablony lub zwiększ pakiet.`,
+                life: 5000
+            });
+        }
+    }
+    
+    // Force false if toggle is locked
+    if (field === 'auto_reply' && !isAutoReplyAvailable.value) {
+        value = false;
+    }
+    if (field === 'active' && isActiveToggleLocked(template)) {
+        value = false;
+    }
+    
     try {
         const updated = { ...template, [field]: value };
         await ReviewsService.saveTemplate(updated);
@@ -667,12 +807,153 @@ const loadTemplates = async () => {
   loading.value = true;
   try {
     templates.value = await ReviewsService.getTemplates();
+    
+    // Disable auto-reply if feature is not available
+    await disableAutoReplyIfNotAvailable();
+    
+    // Enforce limit: disable excess templates
+    await enforceTemplateLimit();
   } catch (e) {
     console.error(e);
     toast.add({ severity: 'error', summary: 'Błąd', detail: 'Nie udało się pobrać szablonów', life: 3000 });
   } finally {
     loading.value = false;
   }
+};
+
+// Disable auto-reply in templates if feature is not available
+const disableAutoReplyIfNotAvailable = async () => {
+  if (isAutoReplyAvailable.value) return; // Feature is available, no need to disable
+  
+  const templatesWithAutoReply = templates.value.filter(t => t.auto_reply === true);
+  if (templatesWithAutoReply.length === 0) return; // No templates with auto-reply enabled
+  
+  // Disable auto-reply for all templates
+  for (const template of templatesWithAutoReply) {
+    try {
+      const updated = { ...template, auto_reply: false };
+      await ReviewsService.saveTemplate(updated);
+      // Update local state
+      const index = templates.value.findIndex(t => t.id === template.id);
+      if (index !== -1) {
+        templates.value[index] = updated;
+      }
+    } catch (e) {
+      console.error('Failed to disable auto-reply for template', e);
+    }
+  }
+  
+  if (templatesWithAutoReply.length > 0) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Auto-odpowiedzi wyłączone',
+      detail: `${templatesWithAutoReply.length} szablon${templatesWithAutoReply.length === 1 ? '' : templatesWithAutoReply.length < 5 ? 'y' : 'ów'} miało włączone auto-odpowiedzi, które zostały wyłączone z powodu braku dostępu do tej funkcji w Twoim planie.`,
+      life: 6000
+    });
+  }
+};
+
+// Computed properties for limit management
+const templateLimit = computed(() => getCurrentLimit('templates', 'maxTemplates'));
+const activeTemplatesCount = computed(() => templates.value.filter(t => t.active).length);
+const limitExceededInfo = computed(() => {
+  if (!templateLimit.value) return null;
+  const activeCount = activeTemplatesCount.value;
+  if (activeCount > templateLimit.value) {
+    return {
+      excess: activeCount - templateLimit.value,
+      limit: templateLimit.value,
+      total: templates.value.length
+    };
+  }
+  return null;
+});
+
+// Show limit message when limit is reached (active count equals limit) or exceeded
+const showLimitMessage = computed(() => {
+  if (!templateLimit.value) return false;
+  const activeCount = activeTemplatesCount.value;
+  // Show message when limit is reached or exceeded, and there are inactive templates
+  const inactiveCount = templates.value.filter(t => !t.active).length;
+  return activeCount >= templateLimit.value && inactiveCount > 0;
+});
+
+// Check if template should be disabled (exceeds limit)
+const isTemplateDisabled = (template) => {
+  if (!templateLimit.value) return false;
+  if (!template.active) return false; // Only disable active templates that exceed limit
+  
+  const activeTemplates = templates.value.filter(t => t.active);
+  const activeCount = activeTemplates.length;
+  
+  // Find position of this template in sorted active templates (by id or creation date)
+  const sortedActive = [...activeTemplates].sort((a, b) => (a.id || 0) - (b.id || 0));
+  const templateIndex = sortedActive.findIndex(t => t.id === template.id);
+  
+  // Disable if this template is beyond the limit
+  return templateIndex >= templateLimit.value;
+};
+
+// Check if active toggle should be locked (limit reached and trying to activate)
+const isActiveToggleLocked = (template) => {
+  if (!templateLimit.value) return false;
+  if (template.active) return false; // Already active, no need to lock
+  
+  // Check if limit is reached
+  const currentActiveCount = templates.value.filter(t => t.active).length;
+  return currentActiveCount >= templateLimit.value;
+};
+
+// Get lock reason for active toggle
+const getActiveToggleLockReason = (template) => {
+  if (!isActiveToggleLocked(template)) return '';
+  return `Osiągnięto limit ${templateLimit.value} aktywnych szablonów dla Twojego planu. Wyłącz inne szablony lub zwiększ pakiet, aby aktywować więcej.`;
+};
+
+// Enforce template limit by disabling excess templates
+const enforceTemplateLimit = async () => {
+  if (!templateLimit.value) return;
+  
+  const activeTemplates = templates.value.filter(t => t.active);
+  if (activeTemplates.length <= templateLimit.value) return;
+  
+  // Sort by ID (or creation date) and disable excess ones
+  const sortedActive = [...activeTemplates].sort((a, b) => (a.id || 0) - (b.id || 0));
+  const excessTemplates = sortedActive.slice(templateLimit.value);
+  
+  // Disable excess templates
+  for (const template of excessTemplates) {
+    try {
+      const updated = { ...template, active: false };
+      await ReviewsService.saveTemplate(updated);
+      // Update local state
+      const index = templates.value.findIndex(t => t.id === template.id);
+      if (index !== -1) {
+        templates.value[index] = updated;
+      }
+    } catch (e) {
+      console.error('Failed to disable excess template', e);
+    }
+  }
+  
+  if (excessTemplates.length > 0) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Limit szablonów',
+      detail: `${excessTemplates.length} szablon${excessTemplates.length === 1 ? '' : excessTemplates.length < 5 ? 'y' : 'ów'} zostało wyłączonych z powodu przekroczenia limitu.`,
+      life: 5000
+    });
+  }
+};
+
+// Navigate to settings
+const navigateToSettings = () => {
+  router.push({ 
+    name: 'settings',
+    query: { 
+      tab: 'business'
+    }
+  });
 };
 
 // Template editing functions
@@ -725,7 +1006,7 @@ const saveTemplateContent = async (template, closeCallback) => {
         if (closeCallback) closeCallback();
         toast.add({ severity: 'success', summary: 'Zapisano', detail: 'Treść została zaktualizowana', life: 2000 });
     } catch (e) {
-        console.error(e);
+      console.error(e);
         toast.add({ severity: 'error', summary: 'Błąd', detail: 'Nie udało się zapisać', life: 3000 });
     } finally {
         saving.value = false;
@@ -967,11 +1248,36 @@ const saveNewTemplate = async () => {
     submitted.value = true;
 
     if (newTemplate.value.name.trim() && newTemplate.value.content.trim()) {
+        // Check limit before saving
+        const currentCount = templates.value.length;
+        if (isLimitExceeded('templates', 'maxTemplates', currentCount)) {
+            const limit = getCurrentLimit('templates', 'maxTemplates');
+            toast.add({ 
+                severity: 'warn', 
+                summary: 'Limit osiągnięty', 
+                detail: `Osiągnięto limit ${limit} szablonów dla Twojego planu. Zaktualizuj plan, aby zwiększyć limit.`, 
+                life: 5000 
+            });
+            return;
+        }
+        
         saving.value = true;
         try {
             await ReviewsService.saveTemplate(newTemplate.value);
             await loadTemplates();
             newTemplateDialogVisible.value = false;
+            
+            // Show limit info if close to limit
+            const limitMessage = getLimitMessage('templates', 'maxTemplates', templates.value.length);
+            if (limitMessage && limitMessage.canProceed) {
+                toast.add({ 
+                    severity: limitMessage.severity, 
+                    summary: limitMessage.summary, 
+                    detail: limitMessage.detail, 
+                    life: 3000 
+                });
+            }
+            
             toast.add({ severity: 'success', summary: 'Sukces', detail: 'Szablon został utworzony', life: 3000 });
             hideNewTemplateDialog();
         } catch (e) {
@@ -1017,7 +1323,8 @@ const showBulkActiveDialog = () => {
 };
 
 const showBulkAutoReplyDialog = () => {
-    bulkAutoReplyValue.value = true;
+    // Set default value based on availability
+    bulkAutoReplyValue.value = isAutoReplyAvailable.value ? true : false;
     bulkAutoReplyDialogVisible.value = true;
 };
 
@@ -1055,6 +1362,17 @@ const applyBulkActive = async () => {
 const applyBulkAutoReply = async () => {
     if (!selectedTemplates.value || selectedTemplates.value.length === 0) return;
     
+    // If trying to enable auto-reply, check if feature is available
+    if (bulkAutoReplyValue.value === true && !isAutoReplyAvailable.value) {
+        toast.add({
+            severity: 'warn',
+            summary: 'Funkcja niedostępna',
+            detail: getAutoReplyLockReason.value,
+            life: 5000
+        });
+        return;
+    }
+    
     const count = selectedTemplates.value.length;
     saving.value = true;
     try {
@@ -1067,7 +1385,7 @@ const applyBulkAutoReply = async () => {
         toast.add({ 
             severity: 'success', 
             summary: 'Sukces', 
-            detail: `Zmieniono auto-odpowiedź dla ${count} szablonów`, 
+            detail: `Zmieniono auto-odpowiedź dla ${count} szablon${count === 1 ? '' : count < 5 ? 'ów' : 'ów'}`, 
             life: 3000 
         });
     } catch (e) {

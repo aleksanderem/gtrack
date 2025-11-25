@@ -221,6 +221,32 @@ Tworzy nowy szablon odpowiedzi.
 
 **Uwaga:** Backend powinien automatycznie konwertować zwykłe zmienne (`@pelne_imie`) na format HTML mentions.
 
+**Walidacja limitów:**
+- Backend powinien sprawdzać limit aktywnych szablonów na podstawie planu użytkownika
+- Jeśli limit jest przekroczony, backend powinien zwrócić błąd `403 Forbidden` z komunikatem:
+  ```json
+  {
+    "error": "limit_exceeded",
+    "message": "Osiągnięto limit aktywnych szablonów dla Twojego planu",
+    "limit": 5,
+    "current": 6
+  }
+  ```
+- Limity aktywnych szablonów:
+  - Basic: 3 aktywne szablony
+  - Professional: 5 aktywnych szablonów
+  - Enterprise: nieograniczone
+
+**Walidacja auto-reply:**
+- Jeśli użytkownik próbuje włączyć `auto_reply: true`, ale funkcja auto-odpowiedzi nie jest dostępna w jego planie, backend powinien zwrócić błąd `403 Forbidden`:
+  ```json
+  {
+    "error": "feature_unavailable",
+    "message": "Auto-odpowiedzi są dostępne w planie Professional. Zwiększ pakiet, aby używać tej funkcji.",
+    "required_plan": "professional"
+  }
+  ```
+
 ---
 
 ### PUT /templates/{templateId}
@@ -939,6 +965,33 @@ Tworzy nową regułę auto-odpowiedzi.
   }
 }
 ```
+
+**Walidacja limitów:**
+- Backend powinien sprawdzać limit reguł auto-odpowiedzi na podstawie planu użytkownika
+- Jeśli limit jest przekroczony, backend powinien zwrócić błąd `403 Forbidden`:
+  ```json
+  {
+    "error": "limit_exceeded",
+    "message": "Osiągnięto limit reguł auto-odpowiedzi dla Twojego planu",
+    "limit": 5,
+    "current": 6
+  }
+  ```
+- Limity reguł auto-odpowiedzi:
+  - Basic: 2 reguły
+  - Professional: 5 reguł
+  - Enterprise: nieograniczone
+
+**Walidacja funkcji:**
+- Jeśli użytkownik próbuje utworzyć regułę, ale funkcja auto-odpowiedzi nie jest dostępna w jego planie, backend powinien zwrócić błąd `403 Forbidden`:
+  ```json
+  {
+    "error": "feature_unavailable",
+    "message": "Auto-odpowiedzi są dostępne w planie Professional. Zwiększ pakiet, aby używać tej funkcji.",
+    "required_plan": "professional"
+  }
+  ```
+- Jeśli użytkownik próbuje włączyć `enabled: true`, ale funkcja auto-odpowiedzi nie jest dostępna, backend powinien automatycznie ustawić `enabled: false` i zwrócić ostrzeżenie w odpowiedzi.
 
 **Response 201:**
 ```json

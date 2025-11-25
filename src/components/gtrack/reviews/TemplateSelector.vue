@@ -31,11 +31,27 @@
             <span class="font-semibold text-sm" :class="canUseTemplate(data) ? 'text-surface-900' : 'text-surface-400'">
               {{ data.name }}
             </span>
-            <Tag 
-              :value="canUseTemplate(data) ? 'Dostępny' : 'Niedostępny'" 
-              :severity="canUseTemplate(data) ? 'success' : 'danger'"
-              class="text-xs w-fit"
-            />
+            <div class="flex flex-wrap gap-1">
+              <Tag 
+                v-if="canUseTemplate(data)"
+                value="Dostępny" 
+                severity="success"
+                class="text-xs w-fit"
+              />
+              <Tag 
+                v-else-if="data._isWithinLimit === false"
+                value="Limit pakietu" 
+                severity="warning"
+                class="text-xs w-fit"
+                v-tooltip.top="`Limit ${getCurrentLimit('templates', 'maxTemplates')} szablonów osiągnięty. Zwiększ pakiet, aby używać więcej szablonów.`"
+              />
+              <Tag 
+                v-else
+                value="Niedostępny" 
+                severity="danger"
+                class="text-xs w-fit"
+              />
+            </div>
           </div>
         </template>
       </Column>
@@ -125,12 +141,15 @@ import Skeleton from 'primevue/skeleton';
 import TinyEditor from '@juit/vue-tiny-editor';
 import '@juit/vue-tiny-editor/style.css';
 import { ReviewsService } from '../../../services/ReviewsService';
+import { useFeatureLimits } from '../../../composables/useFeatureLimits';
 
 const dialogRef = inject('dialogRef');
 const dialogData = inject('dialogData', {});
 const templates = ref([]);
 const loading = ref(true);
 const search = ref('');
+
+const { getCurrentLimit } = useFeatureLimits();
 
 // Available variables map
 const availableVariables = [
@@ -159,6 +178,28 @@ const feedbackData = computed(() => dialogData?.feedbackData || {});
 
 const filteredTemplates = computed(() => {
     let result = templates.value;
+    
+    // Filter only active templates
+    result = result.filter(t => t.active === true);
+    
+    // Sort by ID (or date if available) to ensure consistent ordering
+    result = result.sort((a, b) => (a.id || 0) - (b.id || 0));
+    
+    // Apply package limit - only first N templates are available
+    const templateLimit = getCurrentLimit('templates', 'maxTemplates');
+    if (templateLimit !== null && templateLimit > 0) {
+        // Mark templates beyond limit as unavailable
+        result = result.map((template, index) => ({
+            ...template,
+            _isWithinLimit: index < templateLimit
+        }));
+    } else {
+        // No limit - all templates are available
+        result = result.map(template => ({
+            ...template,
+            _isWithinLimit: true
+        }));
+    }
     
     // Filter by search
     if (search.value) {
@@ -231,8 +272,13 @@ const getMissingVariables = (template) => {
 };
 
 const canUseTemplate = (template) => {
+    // Check if template is within package limit
+    if (template._isWithinLimit === false) {
+        return false;
+    }
+    
     if (!feedbackData.value || Object.keys(feedbackData.value).length === 0) {
-        return true; // If no feedback data provided, allow all templates
+        return true; // If no feedback data provided, allow all templates within limit
     }
     return ReviewsService.canUseTemplate(template, feedbackData.value);
 };
