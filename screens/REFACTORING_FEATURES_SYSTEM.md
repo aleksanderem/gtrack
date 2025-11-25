@@ -97,11 +97,21 @@ Ten dokument opisuje refaktoryzację systemu zarządzania funkcjami i limitami, 
   - Pasek postępu pokazujący procent użycia
 - Automatycznie zmienia kolory w zależności od severity
 
+**`src/components/gtrack/common/LimitProgressBar.vue`** (NOWY)
+- Reużywalny komponent paska postępu limitu
+- Obsługuje wizualizację gradientową w zależności od stanu:
+  - Normalny: Zielony gradient
+  - Ostrzeżenie (>=75%): Żółty gradient
+  - Przekroczony (>=100%): Czerwony gradient
+- Wyświetla licznik i ikonę ostrzeżenia
+
 **Użycie:**
 ```vue
-<LimitWarningBanner 
-  :status="limitStatus" 
-  @upgrade="navigateToSettings"
+<LimitProgressBar 
+  label="Limit auto-odpowiedzi"
+  :current-count="currentCount"
+  :limit="limit"
+  :show-label="true"
 />
 ```
 
@@ -127,7 +137,10 @@ Ten dokument opisuje refaktoryzację systemu zarządzania funkcjami i limitami, 
 - Zmieniono `isFeatureLocked` → `isLocked`
 - Zmieniono `FEATURES.AUTO_REPLY` → `features.autoReply`
 - Dodano import `PLAN_NAMES` z `config/features`
-- Dodano `ProgressBar` do wyświetlania zużycia limitu odpowiedzi
+- Dodano `LimitProgressBar` do wyświetlania zużycia limitu odpowiedzi
+
+**`InterceptedReviews.vue`** (widoczny w ReviewsDashboard):
+- Dodano `LimitProgressBar` w nagłówku dashboardu dla widoku intercepted reviews
 
 **`AIAnalysis.vue`:**
 - Zmieniono `useFeatureFlags` → `useFeatures`
@@ -146,6 +159,8 @@ Ten dokument opisuje refaktoryzację systemu zarządzania funkcjami i limitami, 
 - Dodano funkcje `isTabLocked` i `getTabLockReason`
 - Dodano blokowanie zakładek gdy funkcja jest niedostępna
 - Dodano ikony kłódki dla zablokowanych zakładek
+- Dodano logikę zliczania opinii z bieżącego miesiąca i aktualizacji `usage`
+- Dodano `LimitProgressBar` inline w nagłówku dla widoku intercepted reviews
 
 **`FeatureCard.vue`:**
 - Zmieniono `useFeatureFlags` → `useFeatures`
@@ -332,9 +347,10 @@ aiAnalysis: {
 - `src/composables/useFeatures.js` (151 linii)
 - `src/config/features.js` (319 linii)
 - `src/components/gtrack/common/LimitWarningBanner.vue` (188 linii)
+- `src/components/gtrack/common/LimitProgressBar.vue` (80 linii)
 - `src/services/KeywordsService.js` (szacunkowo ~100 linii)
 - `src/components/gtrack/keywords/KeywordsPanel.example.vue` (szacunkowo ~50 linii)
-- **Razem:** ~808 linii dodanych
+- **Razem:** ~888 linii dodanych
 
 ### Pliki Zmodyfikowane
 - 17 komponentów Vue zaktualizowanych do użycia nowego API
@@ -413,7 +429,14 @@ Uniwersalny komponent do wyświetlania ostrzeżeń o limitach z:
 - Przyciskiem "Zwiększ pakiet" (opcjonalny)
 - Responsywnym designem
 
-### 2. Rozszerzone Limity
+### 2. LimitProgressBar Component
+
+Reużywalny komponent do wyświetlania postępu wykorzystania limitu z:
+- Estetycznymi gradientami
+- Zmianą kolorów w zależności od stanu (zielony, żółty, czerwony)
+- Informacją liczbową o zużyciu
+
+### 3. Rozszerzone Limity
 
 Dodano limity dla:
 - Słów kluczowych (maxKeywords)
@@ -421,7 +444,7 @@ Dodano limity dla:
 - Częstotliwości zadań (minDataSyncIntervalMinutes, etc.)
 - Analizy AI (maxAnalysisPerMonth)
 
-### 3. Lepsze Komunikaty o Limitach
+### 4. Lepsze Komunikaty o Limitach
 
 Funkcja `getLimitStatus()` zwraca szczegółowe informacje:
 - Czy limit jest przekroczony
@@ -445,6 +468,7 @@ Funkcja `getLimitStatus()` zwraca szczegółowe informacje:
 
 ### Components
 - ✅ `src/components/gtrack/common/LimitWarningBanner.vue` - NOWY
+- ✅ `src/components/gtrack/common/LimitProgressBar.vue` - NOWY
 - ✅ `src/components/gtrack/keywords/KeywordsPanel.example.vue` - NOWY
 - 🔄 17 komponentów zaktualizowanych
 
@@ -498,6 +522,7 @@ Wszystkie komponenty używające starych composables muszą zostać zaktualizowa
 
 3. **Sprawdzanie Komponentów:**
    - LimitWarningBanner wyświetla się poprawnie
+   - LimitProgressBar wyświetla się poprawnie i zmienia kolory
    - Toggle switchy są blokowane gdy funkcja jest niedostępna
    - Zakładki są blokowane gdy funkcja jest niedostępna
 
