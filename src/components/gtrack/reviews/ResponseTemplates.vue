@@ -12,6 +12,29 @@
             }">
             <template #header>
                 <div class="flex flex-col gap-3">
+                    <!-- Limit Warning Message -->
+                    <div v-if="showLimitMessage" class="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                        <div class="flex items-start gap-2">
+                            <i class="pi pi-exclamation-triangle text-amber-600 mt-0.5"></i>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-amber-800">
+                                    <span v-if="limitExceededInfo">Przekroczono limit szablonów</span>
+                                    <span v-else>Limit szablonów osiągnięty</span>
+                                </p>
+                                <p class="text-sm text-amber-700 mt-1">
+                                    <span v-if="limitExceededInfo">
+                                        Masz <strong>{{ limitExceededInfo.excess }}</strong> szablon{{ limitExceededInfo.excess === 1 ? '' : limitExceededInfo.excess < 5 ? 'y' : 'ów' }} więcej niż pozwala Twój plan (limit: {{ limitExceededInfo.limit }}). 
+                                        Nadmiarowe szablony zostały wyłączone. 
+                                    </span>
+                                    <span v-else>
+                                        Osiągnięto limit <strong>{{ templateLimit }}</strong> aktywnych szablonów dla Twojego planu. 
+                                        Niektóre szablony są wyłączone z uwagi na limit konta.
+                                    </span>
+                                    <a href="#" @click.prevent="navigateToSettings" class="underline font-semibold">Zwiększ pakiet</a>, aby używać większej ilości szablonów.
+                                </p>
+    </div>
+    </div>
+                    </div>
                     <div class="flex justify-between items-center p-2">
                         <div class="flex gap-2">
                             <Button type="button" icon="pi pi-filter-slash" label="Wyczyść" outlined @click="clearFilter()" size="small" />
@@ -56,7 +79,7 @@
                             :disabled="isTemplateDisabled(data) || isActiveToggleLocked(data)"
                             v-tooltip.top="isActiveToggleLocked(data) ? getActiveToggleLockReason(data) : ''"
                         />
-                    </div>
+    </div>
                 </template>
             </Column>
 
@@ -114,8 +137,8 @@
                             />
                         </div>
                     </div>
-                </template>
-            </Column>
+        </template>
+      </Column>
 
             <Column field="rating" header="Ocena" sortable style="min-width: 10rem" :showFilterMatchModes="false" :pt="{ headerContent: { class: 'font-normal' } }">
                 <template #body="{ data }">
@@ -472,7 +495,7 @@
             <div class="flex items-center gap-3">
                 <ToggleSwitch v-model="bulkActiveValue" />
                 <span class="text-sm font-semibold">{{ bulkActiveValue ? 'Aktywny' : 'Nieaktywny' }}</span>
-            </div>
+  </div>
         </div>
         <template #footer>
             <Button label="Anuluj" icon="pi pi-times" text @click="bulkActiveDialogVisible = false" size="small" />
@@ -1192,13 +1215,13 @@ const createNewTemplate = () => {
         active: true,
         auto_reply: false
     };
-    submitted.value = false;
+  submitted.value = false;
     newTemplateDialogVisible.value = true;
 };
 
 const hideNewTemplateDialog = () => {
     newTemplateDialogVisible.value = false;
-    submitted.value = false;
+  submitted.value = false;
     newTemplate.value = {
         name: '',
         content: '',
@@ -1209,7 +1232,7 @@ const hideNewTemplateDialog = () => {
 };
 
 const saveNewTemplate = async () => {
-    submitted.value = true;
+  submitted.value = true;
 
     if (newTemplate.value.name.trim() && newTemplate.value.content.trim()) {
         // Check limit before saving
@@ -1225,8 +1248,8 @@ const saveNewTemplate = async () => {
             return;
         }
         
-        saving.value = true;
-        try {
+    saving.value = true;
+    try {
             await ReviewsService.saveTemplate(newTemplate.value);
             await loadTemplates();
             newTemplateDialogVisible.value = false;
@@ -1244,8 +1267,8 @@ const saveNewTemplate = async () => {
             
             toast.add({ severity: 'success', summary: 'Sukces', detail: 'Szablon został utworzony', life: 3000 });
             hideNewTemplateDialog();
-        } catch (e) {
-            console.error(e);
+    } catch (e) {
+      console.error(e);
             toast.add({ severity: 'error', summary: 'Błąd', detail: 'Nie udało się utworzyć szablonu', life: 3000 });
     } finally {
       saving.value = false;
