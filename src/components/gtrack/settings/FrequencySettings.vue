@@ -34,7 +34,7 @@
           />
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-1 gap-1">
             <div class="flex items-center gap-2">
-              <span class="font-medium" :class="option.locked ? 'text-gray-400' : 'text-gray-900'">
+              <span class="font-medium text-sm" :class="option.locked ? 'text-gray-400' : 'text-gray-900'">
                 {{ option.label }}
               </span>
               <Tag 
@@ -69,7 +69,7 @@
             :options="weekDays"
             optionLabel="label"
             optionValue="value"
-            class="w-full"
+            class="w-full text-sm"
           />
         </div>
 
@@ -81,7 +81,7 @@
             :options="monthDays"
             optionLabel="label"
             optionValue="value"
-            class="w-full"
+            class="w-full text-sm"
             scrollHeight="300px"
           />
         </div>
@@ -89,21 +89,21 @@
         <!-- Godzina (dla wszystkich auto) -->
         <div class="flex flex-col gap-2">
           <label class="text-sm font-medium text-gray-700">Godzina rozpoczęcia</label>
-          <InputText v-model="selectedTime" type="time" class="w-full" />
+          <InputText v-model="selectedTime" type="time" class="w-full text-sm" />
         </div>
       </div>
 
       <Message severity="secondary" :closable="false" icon="pi pi-info-circle">
-        <span v-if="selectedFrequency === 'daily'">
+        <span v-if="selectedFrequency === 'daily'" class="text-sm">
           Skanowanie będzie uruchamiane codziennie o godzinie <strong>{{ selectedTime }}</strong>.
         </span>
-        <span v-else-if="selectedFrequency === 'weekly'">
+        <span v-else-if="selectedFrequency === 'weekly'" class="text-sm">
           Skanowanie w każdy <strong>{{ getWeekDayLabel(selectedWeekDay) }}</strong> o godzinie <strong>{{ selectedTime }}</strong>.
         </span>
-        <span v-else-if="selectedFrequency === 'biweekly'">
+        <span v-else-if="selectedFrequency === 'biweekly'" class="text-sm">
           Skanowanie co drugi tydzień w <strong>{{ getWeekDayLabel(selectedWeekDay) }}</strong> o godzinie <strong>{{ selectedTime }}</strong>.
         </span>
-        <span v-else-if="selectedFrequency === 'monthly'">
+        <span v-else-if="selectedFrequency === 'monthly'" class="text-sm">
           Skanowanie <strong>{{ selectedMonthDay }}. dnia</strong> każdego miesiąca o godzinie <strong>{{ selectedTime }}</strong>.
         </span>
       </Message>

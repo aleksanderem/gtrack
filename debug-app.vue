@@ -86,11 +86,13 @@
                     severity="secondary"
                     outlined
                     @click="activeTab = 'map'"
+                    class="text-sm"
                   />
                   <Button
                     label="Zapisz ustawienia"
                     icon="pi pi-check"
                     @click="saveSettings"
+                    class="text-sm"
                   />
                 </div>
               </div>

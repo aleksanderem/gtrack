@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <!-- Sekcja Identyfikacji -->
-    <Card class="border border-gray-200 !bg-white shadow-none">
+    <Card class="border border-gray-200 !bg-white shadow-none p-2">
       <template #title>
         <div class="flex justify-between items-start">
           <div>
@@ -18,13 +18,14 @@
             icon="pi pi-search" 
             severity="secondary" 
             outlined 
+            class="text-sm font-normal"
             @click="openSearchModal" 
           />
         </div>
       </template>
       <template #content>
-        <div class="grid gap-6 md:grid-cols-2 mt-4">
-          <div class="flex flex-col gap-2">
+        <div class="grid gap-3 md:grid-cols1 mt-4">
+          <div class="flex flex-col gap-">
             <label class="text-sm font-medium text-gray-700">Google Place ID</label>
             <InputGroup>
               <InputText v-model="config.placeId" placeholder="np. ChIJ..." class="w-full" />
@@ -46,31 +47,66 @@
     </Card>
 
     <!-- Sekcja Strony WWW -->
-    <Card class="border border-gray-200 !bg-white shadow-none">
-      <template #title>
-        <div class="flex justify-between items-start">
-          <div class="flex items-center gap-2 text-xl font-semibold text-gray-900">
-            <i class="pi pi-globe text-blue-500"></i>
-            Strona WWW
+    <BlockUI :blocked="seoLoading">
+      <Card class="border border-gray-200 !bg-white shadow-none">
+        <template #title>
+          <div class="flex justify-between items-start">
+            <div class="flex items-center gap-2 text-xl font-semibold text-gray-900">
+              <i class="pi pi-globe text-blue-500"></i>
+              Strona WWW
+            </div>
+            <div class="flex gap-2">
+              <Button v-if="hasLastAudit" label="Ostatni audyt" icon="pi pi-history" severity="secondary" outlined @click="showLastAudit" size="small" class="text-sm font-normal" />
+              <Button label="Skanuj stronę" icon="pi pi-search" severity="help" variant="outlined"  @click="runSeoAudit" :loading="seoLoading" :disabled="!config.website" size="small" class="text-sm font-normal" />
+            </div>
           </div>
-          <Button label="Skanuj stronę" icon="pi pi-search" severity="primary" @click="runSeoAudit" :loading="seoLoading" :disabled="!config.website" size="small" />
+          <p class="text-sm font-normal text-gray-500 mt-1">
+            Adres strony internetowej powiązanej z wizytówką.
+          </p>
+        </template>
+        <template #content>
+          <div class="flex flex-col gap-2 mt-4 w-full">
+              <label class="text-sm font-medium text-gray-700">Adres URL</label>
+              
+              <Inplace :closable="true" @close="cancelUrlEdit" @open="startUrlEdit" class="w-full bg-[#f1f5f9] rounded-lg" :pt="{ display: { class: '!p-0 w-full rounded-lg' } }">
+                <template #display>
+                    <div class="w-full hover:bg-gray-200 cursor-pointer flex justify-between items-center group transition-colors rounded-lg px-3 py-2 w-full">
+                        <span v-if="config.website" class="text-blue-700 w-full font-medium text-sm">{{ config.website }}</span>
+                        <span v-else class="text-blue-700 italic text-sm">Kliknij, aby dodać adres URL...</span>
+                        <small class="text-xs text-gray-500">Ten adres będzie używany w materiałach marketingowych i na landing page'u.</small>
+                        <i class="pi pi-pencil text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity ml-2"></i>
+                    </div>
+                </template>
+                <template #content="{ closeCallback }">
+                    <div class="flex items-center gap-2 w-full">
+                        <InputGroup class="w-full">
+                            <InputGroupAddon class="py-2 bg-green-50"><i class="pi pi-lock mr-2 ml-2 text-sm" style="color: green"></i> <span class="mr-2 text-green-500 text-sm">https://</span></InputGroupAddon>
+                            <InputText v-model="editingUrl" autofocus class="w-full" @keydown.enter="saveUrlEdit(closeCallback)" />
+                        </InputGroup>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <Button icon="pi pi-check" text rounded class="!text-green-600 hover:!bg-green-50" @click="saveUrlEdit(closeCallback)" />
+                            <Button icon="pi pi-times" text rounded class="!text-gray-500 hover:!bg-gray-100" @click="closeCallback" />
+                        </div>
+                    </div>
+                </template>
+              </Inplace>
+
+              
+          </div>
+        </template>
+      </Card>
+    </BlockUI>
+
+    <!-- Global Loading Overlay -->
+    <div v-if="seoLoading" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/20 backdrop-blur-sm">
+        <div class="bg-white p-6 rounded-xl shadow-xl flex flex-col items-center gap-4">
+            <ProgressSpinner style="width: 50px; height: 50px" strokeWidth="4" />
+            <div class="text-center">
+                <h4 class="font-semibold text-gray-900">Trwa audyt SEO...</h4>
+                <p class="text-sm text-gray-500">To może potrwać do minuty. Proszę czekać.</p>
+            </div>
         </div>
-        <p class="text-sm font-normal text-gray-500 mt-1">
-          Adres strony internetowej powiązanej z wizytówką.
-        </p>
-      </template>
-      <template #content>
-        <div class="flex flex-col gap-2 mt-4">
-            <label class="text-sm font-medium text-gray-700">Adres URL</label>
-            <InputGroup>
-              <InputGroupAddon>https://</InputGroupAddon>
-              <InputText v-model="config.website" placeholder="www.twojanazwa.pl" class="w-full" />
-              <Button icon="pi pi-external-link" severity="secondary" v-tooltip="'Otwórz'" @click="openWebsite" :disabled="!config.website" />
-            </InputGroup>
-            <small class="text-xs text-gray-500">Ten adres będzie używany w materiałach marketingowych i na landing page'u.</small>
-        </div>
-      </template>
-    </Card>
+    </div>
 
     <!-- SEO Audit Dialog -->
     <Dialog v-model:visible="seoDialogVisible" header="Audyt SEO & Słowa kluczowe" :style="{ width: '80vw' }" modal>
@@ -93,27 +129,41 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- On-Page Issues -->
-          <Card class="border border-gray-200 shadow-sm h-full">
-            <template #title><span class="text-lg">Problemy On-Page</span></template>
-            <template #content>
-              <DataTable :value="seoData.on_page.issues" size="small" class="text-sm">
-                <Column field="type" header="Typ">
-                  <template #body="slotProps">
-                    <Tag :value="slotProps.data.type" :severity="getIssueSeverity(slotProps.data.type)" />
-                  </template>
-                </Column>
-                <Column field="message" header="Problem"></Column>
-              </DataTable>
-            </template>
-          </Card>
+        <div class="flex flex-col gap-6">
+          <!-- On-Site Issues -->
+          <Accordion :activeIndex="seoData.on_page.issues.length > 0 ? 0 : null" class="border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white">
+            <AccordionTab>
+                <template #header>
+                    <div class="flex items-center gap-3 w-full">
+                        <span class="text-lg font-semibold text-gray-900">Problemy On-Site</span>
+                        <Badge v-if="seoData.on_page.issues.length > 0" :value="seoData.on_page.issues.length" severity="danger" />
+                        <Tag v-else severity="success" value="OK" icon="pi pi-check" rounded></Tag>
+                    </div>
+                </template>
+                
+                <div v-if="seoData.on_page.issues.length > 0">
+                    <DataTable :value="seoData.on_page.issues" size="small" class="text-sm w-full">
+                        <Column field="type" header="Typ">
+                        <template #body="slotProps">
+                            <Tag :value="slotProps.data.type" :severity="getIssueSeverity(slotProps.data.type)" />
+                        </template>
+                        </Column>
+                        <Column field="message" header="Problem"></Column>
+                    </DataTable>
+                </div>
+                <div v-else class="flex flex-col items-center justify-center py-4 text-center">
+                    <i class="pi pi-check-circle text-3xl text-green-500 mb-2"></i>
+                    <span class="font-medium text-gray-900">Brak problemów On-Site!</span>
+                    <p class="text-sm text-gray-500">Twoja strona jest dobrze zoptymalizowana.</p>
+                </div>
+            </AccordionTab>
+          </Accordion>
 
           <!-- Keyword Suggestions -->
           <Card class="border border-gray-200 shadow-sm h-full">
             <template #title><span class="text-lg">Sugerowane Słowa Kluczowe</span></template>
             <template #content>
-              <DataTable :value="seoData.keywords" size="small" class="text-sm" paginator :rows="5">
+              <DataTable :value="seoData.keywords" size="small" class="text-sm w-full" paginator :rows="5">
                 <Column field="keyword" header="Słowo kluczowe" sortable></Column>
                 <Column field="volume" header="Volume" sortable></Column>
                 <Column field="difficulty" header="Trudność" sortable>
@@ -144,6 +194,20 @@
         </Card>
       </div>
     </Dialog>
+    
+    <!-- Custom Toast for SEO Report -->
+    <Toast position="bottom-right" group="seo-report">
+        <template #message="slotProps">
+            <div class="flex flex-col gap-2 items-start p-1">
+                <div class="flex items-center gap-2">
+                    <i class="pi pi-check-circle text-green-500 text-xl"></i>
+                    <span class="font-semibold text-gray-900">Audyt zakończony pomyślnie</span>
+                </div>
+                <p class="text-sm text-gray-600 m-0">Twoja strona została przeanalizowana.</p>
+                <Button label="Zobacz raport" size="small" link class="!p-0 !text-blue-600 !font-bold" @click="showLastAudit" />
+            </div>
+        </template>
+    </Toast>
 
     <!-- Sekcja Integracji -->
     <Card class="border border-gray-200 !bg-white shadow-none">
@@ -182,17 +246,17 @@
           <div v-else class="flex flex-col gap-4 mt-4">
             <div class="flex flex-col gap-3">
             <!-- Panel Zarządzania (Administrator) -->
-            <div class="bg-white border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="bg-green-50 border border-green-200 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
                  <div class="flex items-center gap-3">
-                    <Avatar icon="pi pi-user" shape="circle" class="bg-gray-100 text-gray-600 border border-gray-200" />
+                    <Avatar icon="pi pi-user" shape="circle" class="bg-green-100 text-green-600 border border-green-200" />
                     <div>
-                      <p class="text-xs text-gray-500">Zarządzane przez</p>
-                      <p class="text-sm font-medium text-gray-900">admin@dublinpainters.ie</p>
+                      <p class="text-xs text-green-500">Zarządzane przez</p>
+                      <p class="text-sm font-medium text-green-600">admin@dublinpainters.ie</p>
                     </div>
                  </div>
                  <div class="flex items-center gap-3 w-full sm:w-auto">
-                     <Button label="Synchronizuj dane" icon="pi pi-refresh" size="small" severity="secondary" outlined class="flex-1 sm:flex-none" @click="confirmSync" />
-                     <Button label="Rozłącz" icon="pi pi-power-off" size="small" severity="danger" text class="flex-1 sm:flex-none" @click="confirmDisconnect" />
+                     <Button label="Synchronizuj dane" icon="pi pi-refresh" size="small" severity="success" outlined class="flex-1 sm:flex-none text-sm text-green-600 border-green-200 font-[400]" @click="confirmSync" />
+                     <Button label="Rozłącz" icon="pi pi-power-off" size="small" severity="danger" text class="flex-1 sm:flex-none text-sm" @click="confirmDisconnect" />
                  </div>
             </div>
 
@@ -399,6 +463,7 @@ import InputIcon from 'primevue/inputicon'
 import Tag from 'primevue/tag'
 
 import ConfirmDialog from 'primevue/confirmdialog'
+import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import { useFeatures } from '../../../composables/useFeatures'
 import { useFeatureSettings } from '../../../stores/featureSettings'
@@ -494,9 +559,19 @@ const runSeoAudit = async () => {
   seoLoading.value = true;
   try {
     const result = await SeoService.runAudit(config.value.website);
-    seoData.value = result;
-    seoDialogVisible.value = true;
-    toast.add({ severity: 'success', summary: 'Skanowanie zakończone', detail: 'Pobrano dane SEO', life: 3000 });
+    seoData.value = { ...result, url: config.value.website };
+    // Don't auto-open dialog, show toast instead
+    // seoDialogVisible.value = true; 
+    
+    toast.add({ 
+        severity: 'success', 
+        summary: 'Skanowanie zakończone', 
+        group: 'seo-report', 
+        life: 10000 // Show for 10s
+    });
+    
+    // Refresh last audit check
+    checkLastAudit();
   } catch (e) {
     console.error(e);
     toast.add({ severity: 'error', summary: 'Błąd', detail: 'Nie udało się przeskanować strony', life: 3000 });
@@ -504,6 +579,115 @@ const runSeoAudit = async () => {
     seoLoading.value = false;
   }
 }
+
+// Convex Integration
+import { convex } from '../../../convex';
+import { api } from '../../../../convex/_generated/api';
+import Inplace from 'primevue/inplace';
+import BlockUI from 'primevue/blockui';
+import ProgressSpinner from 'primevue/progressspinner';
+import Toast from 'primevue/toast';
+import Accordion from 'primevue/accordion';
+import AccordionTab from 'primevue/accordiontab';
+
+const hasLastAudit = ref(false);
+const lastAuditLoading = ref(false);
+const editingUrl = ref('');
+
+const startUrlEdit = () => {
+    // Strip protocol for editing
+    let url = config.value.website || '';
+    url = url.replace(/^https?:\/\//, '');
+    editingUrl.value = url;
+}
+
+const cancelUrlEdit = () => {
+    editingUrl.value = '';
+}
+
+const saveUrlEdit = (closeCallback) => {
+    let url = editingUrl.value.trim();
+    if (url) {
+        // Add protocol if missing (always https for now as per UI)
+        if (!url.startsWith('http')) {
+            url = 'https://' + url;
+        }
+        config.value = { ...config.value, website: url };
+    }
+    if (closeCallback) closeCallback();
+}
+
+const checkLastAudit = async (specificUrl = null) => {
+    const urlToCheck = specificUrl || config.value.website;
+    console.log(`[BusinessSettings] Checking last audit for: ${urlToCheck}`);
+    
+    if (!urlToCheck) return;
+    
+    try {
+        const org = await convex.query(api.organizations.getCurrent);
+        if (org) {
+            const audit = await convex.query(api.seo.getAudit, { url: urlToCheck, orgId: org._id });
+            console.log(`[BusinessSettings] Audit found:`, audit ? 'Yes' : 'No');
+            if (audit) {
+                hasLastAudit.value = true;
+                seoData.value = { ...audit.fullResult, url: urlToCheck };
+            } else {
+                hasLastAudit.value = false;
+                seoData.value = null;
+            }
+        }
+    } catch (e) {
+        console.error("Failed to check last audit", e);
+    }
+}
+
+const showLastAudit = () => {
+    console.log(`[BusinessSettings] Show Last Audit clicked. Data available:`, !!seoData.value);
+    if (seoData.value) {
+        seoDialogVisible.value = true;
+    } else {
+        // Retry check if data missing but flag is true (shouldn't happen but safety net)
+        checkLastAudit().then(() => {
+             if (seoData.value) seoDialogVisible.value = true;
+        });
+    }
+}
+
+// Load initial data
+onMounted(async () => {
+    try {
+        const org = await convex.query(api.organizations.getCurrent);
+        if (org && org.website) {
+            // Update local config without triggering save
+            const newConfig = { ...config.value, website: org.website };
+            emit('update:modelValue', newConfig);
+            
+            // Check for audit using the fetched URL directly to avoid prop update race condition
+            checkLastAudit(org.website);
+        }
+    } catch (e) {
+        console.error("Failed to load org data", e);
+    }
+});
+
+// Save URL on change (Debounced)
+let saveTimeout = null;
+watch(() => config.value.website, (newUrl) => {
+    if (saveTimeout) clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(async () => {
+        if (!newUrl) return;
+        try {
+             const org = await convex.query(api.organizations.getCurrent);
+             if (org) {
+                 await convex.mutation(api.organizations.updateWebsiteUrl, { orgId: org._id, url: newUrl });
+                 console.log("Website URL saved to Convex");
+                 checkLastAudit(); // Check if we have audit for this new URL
+             }
+        } catch (e) {
+            console.error("Failed to save URL", e);
+        }
+    }, 1000);
+});
 
 const getScoreSeverity = (score) => {
   if (score >= 90) return 'success';

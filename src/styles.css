@@ -38,3 +38,10 @@
 .p-select-overlay {
     z-index: 99999 !important;
 }
+
+/* Fix for "flying icons" / ghost rendering artifacts */
+.pi {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-font-smoothing: antialiased;
+}
