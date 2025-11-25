@@ -12,19 +12,6 @@
                         </a>
                     </template>
                     </Menu>
-
-                    <!-- Limit Progress Bar -->
-                    <div v-if="autoReplyLimitStatus.hasLimit" class="px-4">
-                        <LimitProgressBar 
-                            label="Limit auto-odpowiedzi"
-                            :current-count="autoReplyLimitStatus.currentCount"
-                            :limit="autoReplyLimitStatus.limit"
-                            :show-label="true"
-                        />
-                        <p v-if="autoReplyLimitStatus.upgradeMessage" class="text-xs text-primary font-medium cursor-pointer hover:underline mt-2">
-                            {{ autoReplyLimitStatus.upgradeMessage }}
-                        </p>
-                    </div>
                 </div>
             </div>
 

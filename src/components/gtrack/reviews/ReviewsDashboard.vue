@@ -55,6 +55,15 @@
                    :limit="autoReplyLimitStatus.limit"
                />
            </div>
+
+           <!-- Limit Info for Response Templates (Inline) -->
+           <div v-if="route.name === 'reviews-templates'" class="self-center">
+               <LimitProgressBar 
+                   label="Limit szablonów"
+                   :current-count="templatesLimitStatus.currentCount"
+                   :limit="templatesLimitStatus.limit"
+               />
+           </div>
         </div>
 
         <!-- Router View for Sub-tabs -->
@@ -212,6 +221,13 @@ const loadUnreadCounts = async () => {
     }).length;
     
     updateUsage('maxAutoRepliesPerMonth', currentMonthAutoReplies);
+
+    // Update active templates count
+    // Note: This might be slightly off if templates are modified in another tab without refresh
+    // but loadUnreadCounts is called periodically
+    const templates = await ReviewsService.getTemplates();
+    const activeTemplatesCount = templates.filter(t => t.active).length;
+    updateUsage('maxTemplates', activeTemplatesCount);
   } catch (e) {
     console.error('Failed to load unread counts', e);
   }
@@ -242,6 +258,15 @@ const interceptedLimitStatus = computed(() => {
 const autoReplyLimitStatus = computed(() => {
   const currentUsage = usage.value.maxAutoRepliesPerMonth || 0;
   return getLimitStatus('autoReply', 'maxAutoRepliesPerMonth', currentUsage);
+});
+
+// Templates limit status
+const templatesLimitStatus = computed(() => {
+  // For templates, we need to track active templates count
+  // This should ideally come from usage store, but templates are managed in component
+  // We can check usage.maxTemplates if it's updated, or we need to rely on ReviewsService
+  const currentUsage = usage.value.maxTemplates || 0;
+  return getLimitStatus('templates', 'maxTemplates', currentUsage);
 });
 </script>
 

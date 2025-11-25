@@ -12,29 +12,6 @@
             }">
             <template #header>
                 <div class="flex flex-col gap-3">
-                    <!-- Limit Warning Message -->
-                    <div v-if="showLimitMessage" class="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                        <div class="flex items-start gap-2">
-                            <i class="pi pi-exclamation-triangle text-amber-600 mt-0.5"></i>
-                            <div class="flex-1">
-                                <p class="text-sm font-semibold text-amber-800">
-                                    <span v-if="limitExceededInfo">Przekroczono limit szablonów</span>
-                                    <span v-else>Limit szablonów osiągnięty</span>
-                                </p>
-                                <p class="text-sm text-amber-700 mt-1">
-                                    <span v-if="limitExceededInfo">
-                                        Masz <strong>{{ limitExceededInfo.excess }}</strong> szablon{{ limitExceededInfo.excess === 1 ? '' : limitExceededInfo.excess < 5 ? 'y' : 'ów' }} więcej niż pozwala Twój plan (limit: {{ limitExceededInfo.limit }}). 
-                                        Nadmiarowe szablony zostały wyłączone. 
-                                    </span>
-                                    <span v-else>
-                                        Osiągnięto limit <strong>{{ templateLimit }}</strong> aktywnych szablonów dla Twojego planu. 
-                                        Niektóre szablony są wyłączone z uwagi na limit konta.
-                                    </span>
-                                    <a href="#" @click.prevent="navigateToSettings" class="underline font-semibold">Zwiększ pakiet</a>, aby używać większej ilości szablonów.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
                     <div class="flex justify-between items-center p-2">
                         <div class="flex gap-2">
                             <Button type="button" icon="pi pi-filter-slash" label="Wyczyść" outlined @click="clearFilter()" size="small" />
@@ -47,9 +24,6 @@
                         </div>
                         <div class="flex items-center gap-3">
                             <Button label="Nowy szablon" icon="pi pi-plus" size="small" @click="createNewTemplate" />
-                            <span v-if="getLimit('templates', 'maxTemplates')" class="text-sm text-surface-600">
-                                {{ activeTemplatesCount }}/{{ getLimit('templates', 'maxTemplates') }} aktywnych szablonów
-                            </span>
                         </div>
                     </div>
                     <div v-if="selectedTemplates && selectedTemplates.length > 0" class="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
