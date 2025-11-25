@@ -39,30 +39,11 @@
            </div>
            
            <!-- Limit Info for Intercepted Reviews (Inline) -->
-           <div v-if="route.name === 'reviews-intercepted' && interceptedLimitStatus.hasLimit" class="flex items-center gap-3 self-center">
-               <div class="flex flex-col items-end">
-                   <div class="flex items-center gap-2">
-                       <span class="text-sm text-gray-600">Limit miesięczny:</span>
-                       <span class="text-sm font-medium" :class="interceptedLimitStatus.isExceeded ? 'text-red-600' : 'text-gray-700'">
-                           {{ interceptedLimitStatus.currentCount }}/{{ interceptedLimitStatus.limit }}
-                       </span>
-                   </div>
-                   <span v-if="interceptedLimitStatus.isExceeded" class="text-xs text-red-600 font-medium">
-                       Limit osiągnięty
-                   </span>
-               </div>
-               <ProgressBar 
-                   :value="interceptedLimitStatus.percentage" 
-                   :showValue="false" 
-                   class="w-32 h-2" 
-                   :pt="{ 
-                       value: { 
-                           class: [
-                               interceptedLimitStatus.isExceeded ? 'bg-red-500' : 
-                               interceptedLimitStatus.percentage >= 90 ? 'bg-orange-500' : 'bg-green-500'
-                           ] 
-                       } 
-                   }"
+           <div v-if="route.name === 'reviews-intercepted'" class="self-center">
+               <LimitProgressBar 
+                   label="Limit miesięczny"
+                   :current-count="interceptedLimitStatus.currentCount"
+                   :limit="interceptedLimitStatus.limit"
                />
            </div>
         </div>
@@ -88,6 +69,7 @@ import Toast from 'primevue/toast';
 import ProgressBar from 'primevue/progressbar';
 import DynamicDialog from 'primevue/dynamicdialog';
 import ConfirmDialog from 'primevue/confirmdialog';
+import LimitProgressBar from '../common/LimitProgressBar.vue';
 import { ReviewsService } from '../../../services/ReviewsService';
 import { useFeatures } from '../../../composables/useFeatures';
 import { useFeatureSettings } from '../../../stores/featureSettings';

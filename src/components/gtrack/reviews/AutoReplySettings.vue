@@ -14,34 +14,16 @@
                     </Menu>
 
                     <!-- Limit Progress Bar -->
-                    <div v-if="autoReplyLimitStatus.hasLimit" class="p-4 bg-surface-0 border border-surface-200 rounded-lg shadow-sm">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-sm font-semibold text-surface-700">Limit odpowiedzi</span>
-                            <span class="text-xs font-medium" :class="{'text-red-500': autoReplyLimitStatus.isExceeded}">
-                                {{ autoReplyLimitStatus.currentCount }}/{{ autoReplyLimitStatus.limit }}
-                            </span>
-                        </div>
-                        <ProgressBar 
-                            :value="autoReplyLimitStatus.percentage" 
-                            :showValue="false" 
-                            class="h-2 mb-2"
-                            :pt="{
-                                value: {
-                                    class: [
-                                        autoReplyLimitStatus.isExceeded || autoReplyLimitStatus.percentage >= 90 ? 'bg-red-500' : 
-                                        autoReplyLimitStatus.percentage >= 75 ? 'bg-orange-500' : 'bg-green-500'
-                                    ]
-                                }
-                            }"
+                    <div v-if="autoReplyLimitStatus.hasLimit" class="px-4">
+                        <LimitProgressBar 
+                            label="Limit auto-odpowiedzi"
+                            :current-count="autoReplyLimitStatus.currentCount"
+                            :limit="autoReplyLimitStatus.limit"
+                            :show-label="true"
                         />
-                        <p class="text-xs text-surface-500 leading-tight">
-                            {{ autoReplyLimitStatus.message }}
+                        <p v-if="autoReplyLimitStatus.upgradeMessage" class="text-xs text-primary font-medium cursor-pointer hover:underline mt-2">
+                            {{ autoReplyLimitStatus.upgradeMessage }}
                         </p>
-                        <div v-if="autoReplyLimitStatus.upgradeMessage" class="mt-2">
-                            <p class="text-xs text-primary font-medium cursor-pointer hover:underline">
-                                {{ autoReplyLimitStatus.upgradeMessage }}
-                            </p>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -492,6 +474,7 @@ import InputText from 'primevue/inputtext';
 import Select from 'primevue/select';
 import Menu from 'primevue/menu';
 import ProgressBar from 'primevue/progressbar';
+import LimitProgressBar from '../common/LimitProgressBar.vue';
 import TinyEditor from '@juit/vue-tiny-editor';
 import '@juit/vue-tiny-editor/style.css';
 import { ReviewsService } from '../../../services/ReviewsService';
