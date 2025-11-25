@@ -48,9 +48,12 @@
     <!-- Sekcja Strony WWW -->
     <Card class="border border-gray-200 !bg-white shadow-none">
       <template #title>
-        <div class="flex items-center gap-2 text-xl font-semibold text-gray-900">
-          <i class="pi pi-globe text-blue-500"></i>
-          Strona WWW
+        <div class="flex justify-between items-start">
+          <div class="flex items-center gap-2 text-xl font-semibold text-gray-900">
+            <i class="pi pi-globe text-blue-500"></i>
+            Strona WWW
+          </div>
+          <Button label="Skanuj stronę" icon="pi pi-search" severity="primary" @click="runSeoAudit" :loading="seoLoading" :disabled="!config.website" size="small" />
         </div>
         <p class="text-sm font-normal text-gray-500 mt-1">
           Adres strony internetowej powiązanej z wizytówką.
@@ -68,6 +71,79 @@
         </div>
       </template>
     </Card>
+
+    <!-- SEO Audit Dialog -->
+    <Dialog v-model:visible="seoDialogVisible" header="Audyt SEO & Słowa kluczowe" :style="{ width: '80vw' }" modal>
+      <div v-if="seoData" class="flex flex-col gap-6">
+        <!-- Summary Card -->
+        <div class="p-4 bg-surface-50 border border-surface-200 rounded-lg flex items-center justify-between">
+          <div>
+            <span class="text-sm text-surface-600 block">Audytowana strona</span>
+            <a :href="seoData.url.startsWith('http') ? seoData.url : 'https://' + seoData.url" target="_blank" class="text-lg font-bold text-primary hover:underline">{{ seoData.url }}</a>
+          </div>
+          <div class="flex gap-4">
+            <div class="text-center">
+              <span class="text-xs text-surface-500 block">Performance</span>
+              <Tag :value="seoData.on_page.performance.score + '/100'" :severity="getScoreSeverity(seoData.on_page.performance.score)" />
+            </div>
+            <div class="text-center">
+              <span class="text-xs text-surface-500 block">Problemy</span>
+              <Badge :value="seoData.on_page.issues.length" severity="danger" />
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- On-Page Issues -->
+          <Card class="border border-gray-200 shadow-sm h-full">
+            <template #title><span class="text-lg">Problemy On-Page</span></template>
+            <template #content>
+              <DataTable :value="seoData.on_page.issues" size="small" class="text-sm">
+                <Column field="type" header="Typ">
+                  <template #body="slotProps">
+                    <Tag :value="slotProps.data.type" :severity="getIssueSeverity(slotProps.data.type)" />
+                  </template>
+                </Column>
+                <Column field="message" header="Problem"></Column>
+              </DataTable>
+            </template>
+          </Card>
+
+          <!-- Keyword Suggestions -->
+          <Card class="border border-gray-200 shadow-sm h-full">
+            <template #title><span class="text-lg">Sugerowane Słowa Kluczowe</span></template>
+            <template #content>
+              <DataTable :value="seoData.keywords" size="small" class="text-sm" paginator :rows="5">
+                <Column field="keyword" header="Słowo kluczowe" sortable></Column>
+                <Column field="volume" header="Volume" sortable></Column>
+                <Column field="difficulty" header="Trudność" sortable>
+                  <template #body="slotProps">
+                    <span :class="getDifficultyColor(slotProps.data.difficulty)">{{ slotProps.data.difficulty }}/100</span>
+                  </template>
+                </Column>
+              </DataTable>
+            </template>
+          </Card>
+        </div>
+
+        <!-- Meta Tags -->
+        <Card class="border border-gray-200 shadow-sm">
+          <template #title><span class="text-lg">Meta Tagi</span></template>
+          <template #content>
+            <div class="flex flex-col gap-3 text-sm">
+              <div>
+                <span class="font-semibold block">Title ({{ seoData.on_page.meta.title.length }} znaków)</span>
+                <p class="text-surface-700 m-0">{{ seoData.on_page.meta.title.value }}</p>
+              </div>
+              <div>
+                <span class="font-semibold block">Description ({{ seoData.on_page.meta.description.length }} znaków)</span>
+                <p class="text-surface-700 m-0">{{ seoData.on_page.meta.description.value }}</p>
+              </div>
+            </div>
+          </template>
+        </Card>
+      </div>
+    </Dialog>
 
     <!-- Sekcja Integracji -->
     <Card class="border border-gray-200 !bg-white shadow-none">
@@ -320,11 +396,13 @@ import Column from 'primevue/column'
 import Dialog from 'primevue/dialog'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
+import Tag from 'primevue/tag'
 
 import ConfirmDialog from 'primevue/confirmdialog'
 import { useConfirm } from 'primevue/useconfirm'
 import { useFeatures } from '../../../composables/useFeatures'
 import { useFeatureSettings } from '../../../stores/featureSettings'
+import { SeoService } from '../../../services/SeoService'
 import FeatureLicenseBadge from './FeatureLicenseBadge.vue'
 
 const props = defineProps({
@@ -351,6 +429,10 @@ const route = useRoute()
 const { isLocked, features } = useFeatures()
 const { featureSettings, updateFeature: updateGlobalFeature } = useFeatureSettings()
 const highlightedFeature = ref(null)
+const seoLoading = ref(false)
+const seoDialogVisible = ref(false)
+const seoData = ref(null)
+const toast = useToast()
 
 const config = computed({
   get: () => {
@@ -404,6 +486,41 @@ const openWebsite = () => {
     }
     window.open(url, '_blank');
   }
+}
+
+const runSeoAudit = async () => {
+  if (!config.value.website) return;
+  
+  seoLoading.value = true;
+  try {
+    const result = await SeoService.runAudit(config.value.website);
+    seoData.value = result;
+    seoDialogVisible.value = true;
+    toast.add({ severity: 'success', summary: 'Skanowanie zakończone', detail: 'Pobrano dane SEO', life: 3000 });
+  } catch (e) {
+    console.error(e);
+    toast.add({ severity: 'error', summary: 'Błąd', detail: 'Nie udało się przeskanować strony', life: 3000 });
+  } finally {
+    seoLoading.value = false;
+  }
+}
+
+const getScoreSeverity = (score) => {
+  if (score >= 90) return 'success';
+  if (score >= 70) return 'warn';
+  return 'danger';
+}
+
+const getIssueSeverity = (type) => {
+  if (type === 'error') return 'danger';
+  if (type === 'warning') return 'warn';
+  return 'info';
+}
+
+const getDifficultyColor = (difficulty) => {
+  if (difficulty < 30) return 'text-green-600 font-semibold';
+  if (difficulty < 60) return 'text-orange-500 font-medium';
+  return 'text-red-600 font-bold';
 }
 
 // Handle highlight from route query
