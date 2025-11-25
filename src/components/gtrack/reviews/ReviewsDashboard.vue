@@ -32,9 +32,39 @@
       <div class="p-6 mx-auto" :class="{ 'max-w-7xl': route.name !== 'reviews-intercepted' && route.name !== 'reviews-templates' && route.name !== 'reviews-auto-reply' && route.name !== 'reviews-auto-reply-history', 'w-full': route.name === 'reviews-intercepted' || route.name === 'reviews-templates' || route.name === 'reviews-auto-reply' || route.name === 'reviews-auto-reply-history' }">
         
         <!-- Common Header for all tabs or just specific ones -->
-        <div v-if="route.name !== 'reviews-auto-reply-history'" class="mb-4">
-           <h1 class="text-2xl font-bold text-gray-900">{{ pageTitle }}</h1>
-           <p class="text-gray-500">{{ pageDescription }}</p>
+        <div v-if="route.name !== 'reviews-auto-reply-history'" class="mb-4 flex justify-between items-start">
+           <div>
+               <h1 class="text-2xl font-bold text-gray-900">{{ pageTitle }}</h1>
+               <p class="text-gray-500">{{ pageDescription }}</p>
+           </div>
+           
+           <!-- Limit Info for Intercepted Reviews (Inline) -->
+           <div v-if="route.name === 'reviews-intercepted' && interceptedLimitStatus.hasLimit" class="flex items-center gap-3 self-center">
+               <div class="flex flex-col items-end">
+                   <div class="flex items-center gap-2">
+                       <span class="text-sm text-gray-600">Limit miesięczny:</span>
+                       <span class="text-sm font-medium" :class="interceptedLimitStatus.isExceeded ? 'text-red-600' : 'text-gray-700'">
+                           {{ interceptedLimitStatus.currentCount }}/{{ interceptedLimitStatus.limit }}
+                       </span>
+                   </div>
+                   <span v-if="interceptedLimitStatus.isExceeded" class="text-xs text-red-600 font-medium">
+                       Limit osiągnięty
+                   </span>
+               </div>
+               <ProgressBar 
+                   :value="interceptedLimitStatus.percentage" 
+                   :showValue="false" 
+                   class="w-32 h-2" 
+                   :pt="{ 
+                       value: { 
+                           class: [
+                               interceptedLimitStatus.isExceeded ? 'bg-red-500' : 
+                               interceptedLimitStatus.percentage >= 90 ? 'bg-orange-500' : 'bg-green-500'
+                           ] 
+                       } 
+                   }"
+               />
+           </div>
         </div>
 
         <!-- Router View for Sub-tabs -->
@@ -55,10 +85,12 @@ import { useRoute, useRouter } from 'vue-router';
 import Button from 'primevue/button';
 import Badge from 'primevue/badge';
 import Toast from 'primevue/toast';
+import ProgressBar from 'primevue/progressbar';
 import DynamicDialog from 'primevue/dynamicdialog';
 import ConfirmDialog from 'primevue/confirmdialog';
 import { ReviewsService } from '../../../services/ReviewsService';
 import { useFeatures } from '../../../composables/useFeatures';
+import { useFeatureSettings } from '../../../stores/featureSettings';
 
 const stats = ref(null);
 const unreadReviewsCount = ref(0);
@@ -66,7 +98,8 @@ const unreadInterceptedCount = ref(0);
 const route = useRoute();
 const router = useRouter();
 
-const { can, isLocked, features } = useFeatures();
+const { can, isLocked, features, getLimitStatus } = useFeatures();
+const { usage, updateUsage } = useFeatureSettings();
 
 const tabs = [
   { id: 'overview', label: 'Przegląd', icon: 'pi pi-home', routeName: 'reviews-overview', featureKey: null },
@@ -166,6 +199,18 @@ const loadUnreadCounts = async () => {
     // Load unread intercepted feedbacks count (status: 'new')
     const allFeedbacks = await ReviewsService.getInternalFeedbacks();
     unreadInterceptedCount.value = allFeedbacks.filter(f => f.status === 'new').length;
+    
+    // Update usage stats for intercepted reviews (current month)
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    const currentMonthCount = allFeedbacks.filter(f => {
+      const d = new Date(f.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    }).length;
+    
+    updateUsage('maxInterceptedPerMonth', currentMonthCount);
   } catch (e) {
     console.error('Failed to load unread counts', e);
   }
@@ -184,6 +229,12 @@ onMounted(() => {
 // Refresh counts when route changes (user navigates between tabs)
 watch(() => route.name, () => {
   loadUnreadCounts();
+});
+
+// Intercepted reviews limit status
+const interceptedLimitStatus = computed(() => {
+  const currentUsage = usage.value.maxInterceptedPerMonth || 0;
+  return getLimitStatus('interceptedReviews', 'maxInterceptedPerMonth', currentUsage);
 });
 </script>
 
