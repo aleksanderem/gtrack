@@ -1,7 +1,9 @@
 # Locations Module – Business Flow Specification
 
 ## Overview
-This document defines the end-to-end journey for customers managing Google Business Profile locations inside Concord CRM. It covers onboarding, keyword tracking, grid-based ranking reports, competitive insights, and subscription gating so that the module delivers a coherent workflow backed by measurable limits.
+This document defines the end-to-end journey for customers managing Google Business Profile locations in GTRACK. It covers onboarding, keyword tracking, grid-based ranking reports, competitive insights, and subscription gating so that the module delivers a coherent workflow backed by measurable limits.
+
+**Technology Stack**: Vue 3 (Composition API) + PrimeVue (Unstyled mode) + Tailwind CSS + Convex (Backend)
 
 ## Primary Personas
 - **Marketing Manager** – Configures locations, tracks visibility, communicates results to stakeholders.
@@ -80,21 +82,21 @@ This document defines the end-to-end journey for customers managing Google Busin
 - Localise labels using `vue-i18n` (`locations::`, `core::`) rather than hard-coded strings.
 - Introduce reusable `QuotaCounter` component to display remaining credits.
 - Add `EmptyState` variants for each tab with contextual messaging and CTA.
-- Przy nowych ekranach stosujemy komponenty [Nuxt UI](https://ui.nuxt.com/docs/getting-started/ai/llms-txt) (np. `NCard`, `NButton`, `NInput`, `NTable`, `NSparkline`, `NSegmentedControl`) zapewniające spójny design i wsparcie dla trybu ciemnego; PrimeVue pozostaje tylko tam, gdzie migracja jest kosztowna.
-- Oś czasu i filtry dat korzystają z komponentów Nuxt UI (`NSegmentedControl`, `NCarousel`/custom slider), utrzymując UX zbliżony do referencyjnych ekranów.
-- Remove debug logs and standardise toast feedback (`Innoclapps.success/error/info`).
+- **Use PrimeVue components** for all new screens (e.g., `Card`, `Button`, `InputText`, `DataTable`, `Chart` for sparklines, `SelectButton` for segmented controls). PrimeVue is configured in "Unstyled mode" with Tailwind CSS presets, providing full control over styling while maintaining consistent design.
+- Timeline and date filters use PrimeVue components (`SelectButton` for segmented controls, custom slider or `Carousel`), maintaining UX consistent with reference screens.
+- Remove debug logs and standardise toast feedback (use PrimeVue `useToast` composable).
 
-## Backend Touchpoints
-- Extend `locations` resource API to return onboarding status flags and quota counters.
-- Create endpoints for saved grid reports (`/locations/{id}/grid-reports` CRUD) with schedule support.
-- Ensure keyword, competitor, and grid report actions record credit consumption via `QuotaService`.
-- Provide job progress updates through broadcasting (consumed by `SyncStatusBadge`).
+## Backend Touchpoints (Convex)
+- Extend `organizations` table in Convex to return onboarding status flags and quota counters.
+- Create Convex functions for saved grid reports (queries/mutations for grid reports CRUD) with schedule support.
+- Ensure keyword, competitor, and grid report actions record credit consumption via `featureUsage` table and `featureLimits.ts`.
+- Provide job progress updates through Convex real-time subscriptions (consumed by `SyncStatusBadge`).
 
 ## Subscription & Quota Integration
-- Wykorzystać istniejący moduł `Saas` oraz `Invoices` do pobierania aktywnego planu, limitów i harmonogramów odświeżeń.
-- Frontend korzysta z udostępnionych endpointów (np. `GET /saas/usage`, `GET /saas/features`) i aktualizuje UI w czasie rzeczywistym.
-- Działania zużywające limity (dodanie lokalizacji, fraz, zapis raportu) raportują się do `QuotaServiceInterface`, który już synchronizuje dane z modułem SaaS.
-- Ekrany modułu lokalizacji jedynie prezentują te informacje i kierują użytkownika do modułu SaaS w celu zmiany planu.
+- Use Convex `organizations` table to store subscription plan (`plan` field: 'basic', 'professional', 'enterprise').
+- Frontend uses Convex queries (e.g., `organizations.getCurrent`) to fetch active plan, limits, and refresh schedules, updating UI in real-time via `convex.onUpdate`.
+- Actions consuming limits (adding location, keywords, saving report) are tracked in `featureUsage` table and validated via `featureLimits.ts` functions.
+- Location module screens display this information and guide users to upgrade their plan when limits are reached.
 
 ## Success Metrics
 - Time-to-value: percentage of locations completing onboarding checklist within 24h.
