@@ -54,3 +54,4 @@
 * [Setup & Development](guides/setup.md)
 * [Deployment](guides/deployment.md)
 * [New Feature Guide](guides/new-feature.md)
+* [Planning Documents Status](guides/planning-documents-status.md)
