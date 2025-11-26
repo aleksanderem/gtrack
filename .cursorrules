@@ -282,3 +282,318 @@ Documentation updates may be deferred ONLY if:
 - Keep migration status current
 - Update technology stack versions regularly
 
+---
+
+# AGENTS.md Maintenance Rules
+
+## Overview
+`AGENTS.md` contains repository guidelines, coding standards, and project conventions that MUST be kept up-to-date.
+
+## Core Principle
+**Any change to project structure, conventions, build process, or development workflow MUST be reflected in `AGENTS.md` BEFORE or WITH the commit.**
+
+## Update Requirements for AGENTS.md
+
+### 1. Project Structure Changes
+
+#### When to Update:
+- ✅ Adding new top-level directories
+- ✅ Reorganizing component structure (`src/components/gtrack/`)
+- ✅ Changing module organization patterns
+- ✅ Adding new artifact directories (`screens/`, `screenshots/`, etc.)
+- ✅ Modifying reference directories (`example/`)
+
+#### Required Updates:
+- Update "Project Structure & Module Organization" section
+- Document new directory purposes
+- Update file location guidelines
+- Document any structural conventions
+
+### 2. Build & Development Process Changes
+
+#### When to Update:
+- ✅ Adding new npm scripts
+- ✅ Changing build configuration (Vite, PostCSS, etc.)
+- ✅ Modifying development server setup
+- ✅ Adding new development tools
+- ✅ Changing test runner or test structure
+
+#### Required Updates:
+- Update "Build, Test, and Development Commands" section
+- Add new commands with descriptions
+- Update existing command descriptions if behavior changed
+- Document new tools and their usage
+
+### 3. Coding Style & Conventions Changes
+
+#### When to Update:
+- ✅ Changing naming conventions (components, files, directories)
+- ✅ Modifying indentation or formatting standards
+- ✅ Adding new style guidelines (CSS, Tailwind usage)
+- ✅ Changing component structure patterns
+- ✅ Modifying import/export conventions
+- ✅ Updating PrimeVue usage patterns
+
+#### Required Updates:
+- Update "Coding Style & Naming Conventions" section
+- Document new conventions
+- Update examples if patterns changed
+- Clarify any ambiguous guidelines
+
+### 4. Testing Guidelines Changes
+
+#### When to Update:
+- ✅ Adding new test frameworks or tools
+- ✅ Changing test file structure or naming
+- ✅ Modifying test execution process
+- ✅ Adding new test types (unit, integration, e2e)
+- ✅ Changing visual regression testing approach
+
+#### Required Updates:
+- Update "Testing Guidelines" section
+- Document new test patterns
+- Update test command examples
+- Document test file organization
+
+### 5. Commit & PR Process Changes
+
+#### When to Update:
+- ✅ Changing commit message format
+- ✅ Modifying PR requirements
+- ✅ Adding new review criteria
+- ✅ Changing branching strategy
+- ✅ Updating PR template or checklist
+
+#### Required Updates:
+- Update "Commit & Pull Request Guidelines" section
+- Document new requirements
+- Update examples
+- Clarify review process
+
+### 6. Technology Stack Changes
+
+#### When to Update:
+- ✅ Upgrading major versions (Vue, Vite, PrimeVue, etc.)
+- ✅ Adding new dependencies
+- ✅ Removing dependencies
+- ✅ Changing build tools
+
+#### Required Updates:
+- Update relevant sections mentioning technologies
+- Document breaking changes in conventions
+- Update examples if API changed
+
+## AGENTS.md Update Checklist
+
+Before committing structural or convention changes:
+
+- [ ] Project structure section updated if directories changed
+- [ ] Build commands section updated if scripts changed
+- [ ] Coding style section updated if conventions changed
+- [ ] Testing guidelines updated if test process changed
+- [ ] Commit/PR guidelines updated if process changed
+- [ ] Examples in AGENTS.md still accurate
+- [ ] References to file paths still correct
+
+## Enforcement Rules for AGENTS.md
+
+### Rule 1: Structure Changes
+**If you reorganize project structure, you MUST update AGENTS.md before committing.**
+
+### Rule 2: Convention Changes
+**If you change coding conventions or style guidelines, you MUST update AGENTS.md before committing.**
+
+### Rule 3: Build Process Changes
+**If you add or modify build/development commands, you MUST update AGENTS.md before committing.**
+
+### Rule 4: Test Process Changes
+**If you change testing approach or tools, you MUST update AGENTS.md before committing.**
+
+---
+
+# GEMINI.md Maintenance Rules
+
+## Overview
+`GEMINI.md` contains session memory, project status, key decisions, and action plans that MUST be kept current.
+
+## Core Principle
+**Any change to project status, key decisions, completed tasks, or action plans MUST be reflected in `GEMINI.md` BEFORE or WITH the commit.**
+
+## Update Requirements for GEMINI.md
+
+### 1. Project Status Changes
+
+#### When to Update:
+- ✅ Completing major milestones
+- ✅ Changing project phase (frontend → backend integration, etc.)
+- ✅ Resolving major blockers
+- ✅ Changing technology stack status
+- ✅ Updating mock vs real data status
+
+#### Required Updates:
+- Update "Status Projektu" section
+- Update project type/stack if changed
+- Update current phase description
+- Document any status transitions
+
+### 2. Key Decisions & Findings
+
+#### When to Update:
+- ✅ Making architectural decisions
+- ✅ Discovering important findings during analysis
+- ✅ Resolving ambiguities or contradictions
+- ✅ Changing approach to a problem
+- ✅ Documenting "why" decisions
+
+#### Required Updates:
+- Add to "Kluczowe ustalenia" section
+- Document decision rationale
+- Update existing findings if proven wrong
+- Mark resolved items
+
+### 3. Completed Tasks
+
+#### When to Update:
+- ✅ Completing items from "Plan Działania"
+- ✅ Finishing major features
+- ✅ Resolving issues mentioned in status
+
+#### Required Updates:
+- Move completed items to "Completed" section (or mark as done)
+- Update "Plan Działania" to reflect progress
+- Document what was actually implemented vs planned
+- Note any deviations from original plan
+
+### 4. Action Plan Changes
+
+#### When to Update:
+- ✅ Adding new tasks to action plan
+- ✅ Reprioritizing tasks
+- ✅ Removing obsolete tasks
+- ✅ Breaking down tasks into subtasks
+- ✅ Changing implementation approach
+
+#### Required Updates:
+- Update "Plan Działania (Next Steps)" section
+- Reorder tasks by priority if changed
+- Add completion dates for finished tasks
+- Document why tasks were added/removed
+
+### 5. Rules & Conventions Updates
+
+#### When to Update:
+- ✅ AGENTS.md was updated (sync rules section)
+- ✅ Project conventions changed
+- ✅ New patterns established
+
+#### Required Updates:
+- Update "Reguły (z AGENTS.md)" section
+- Sync with current AGENTS.md content
+- Document any GEMINI-specific rules
+
+### 6. Data & Context Updates
+
+#### When to Update:
+- ✅ Session date changes (new session)
+- ✅ Context changes (new phase of work)
+- ✅ Major refactoring completed
+
+#### Required Updates:
+- Update date and context at top
+- Add new session entries if starting fresh
+- Archive old sessions if needed
+
+## GEMINI.md Structure
+
+### Required Sections:
+1. **Header**: Date and context
+2. **Status Projektu**: Current project state
+3. **Kluczowe ustalenia**: Key decisions and findings
+4. **Plan Działania**: Action items and next steps
+5. **Reguły**: Synced rules from AGENTS.md
+
+### Optional Sections:
+- **Completed**: Finished tasks (can be separate or inline)
+- **Blockers**: Current impediments
+- **Notes**: Additional context
+
+## GEMINI.md Update Checklist
+
+Before committing code that affects project status:
+
+- [ ] Status Projektu reflects current state
+- [ ] Kluczowe ustalenia includes new decisions
+- [ ] Plan Działania updated with progress
+- [ ] Completed tasks marked/archived
+- [ ] Reguły section synced with AGENTS.md
+- [ ] Date/context updated if new session
+
+## Enforcement Rules for GEMINI.md
+
+### Rule 1: Status Updates
+**If project status changes (milestones, phase transitions), you MUST update GEMINI.md before committing.**
+
+### Rule 2: Decision Documentation
+**If you make a key architectural or design decision, you MUST document it in GEMINI.md before committing.**
+
+### Rule 3: Task Completion
+**If you complete a task from the action plan, you MUST update GEMINI.md to reflect completion.**
+
+### Rule 4: Plan Changes
+**If you change the action plan (add/remove/reprioritize tasks), you MUST update GEMINI.md before committing.**
+
+### Rule 5: Rule Sync
+**If AGENTS.md is updated, you MUST sync the rules section in GEMINI.md.**
+
+## Commit Message Format for GEMINI.md
+
+When updating GEMINI.md, include in commit message:
+
+```
+docs: memory Update GEMINI.md with [what changed]
+
+- Updated project status: [description]
+- Documented decision: [decision]
+- Completed task: [task name]
+- Updated action plan: [changes]
+```
+
+Examples:
+```
+docs: memory Update GEMINI.md - completed mock data centralization
+docs: memory Update GEMINI.md - documented API layer decision
+docs: memory Update GEMINI.md - updated project status to backend integration phase
+```
+
+## Commit Message Format for AGENTS.md
+
+When updating AGENTS.md, include in commit message:
+
+```
+docs: guidelines Update AGENTS.md with [what changed]
+
+- Updated [section]: [description]
+- Added convention: [convention]
+- Modified build process: [changes]
+```
+
+Examples:
+```
+docs: guidelines Update AGENTS.md - added new test command
+docs: guidelines Update AGENTS.md - updated component naming conventions
+docs: guidelines Update AGENTS.md - modified PR requirements
+```
+
+## Maintenance Schedule
+
+### AGENTS.md
+- Review after major refactorings
+- Update when conventions evolve
+- Sync with actual project structure quarterly
+
+### GEMINI.md
+- Update at start of each work session
+- Update when completing major milestones
+- Archive old sessions monthly
+- Review and consolidate quarterly
+
