@@ -597,3 +597,261 @@ docs: guidelines Update AGENTS.md - modified PR requirements
 - Archive old sessions monthly
 - Review and consolidate quarterly
 
+---
+
+# Planning Documents Maintenance Rules
+
+## Overview
+Files in `screens/` directory and root-level planning documents (`.md`) contain business specifications, feature plans, API documentation, and implementation plans that MUST be kept current or archived.
+
+## Core Principle
+**Planning documents serve as specifications and roadmaps. They MUST be updated when features are implemented, plans change, or become obsolete. Outdated plans MUST be archived or removed.**
+
+## Files Covered
+
+### Root Level
+- `ANALIZA_STANU_PROJEKTU.md` - Project status analysis (historical snapshot)
+- `CLAUDE.md` - Empty file (can be removed if not needed)
+
+### screens/ Directory
+- `LOCATIONS_BUSINESS_FLOW_PLAN.md` - Business flow specification (8 user journeys)
+- `REVIEWS_API_DOCUMENTATION.md` - Reviews API specification
+- `AUTO_REPLY_FEATURE_PLAN.md` - Auto-reply feature implementation plan
+- `FEATURE_LIMITS_AND_TOGGLE_LOCKS.md` - Feature limits implementation documentation
+- `REFACTORING_FEATURES_SYSTEM.md` - Features system refactoring documentation
+- `ANALYSIS_FROM_ANTYGRAVITY_REFACTORING.md` - Analysis documentation
+
+## Update Requirements
+
+### 1. Feature Implementation Status
+
+#### When to Update:
+- ✅ Implementing features from `LOCATIONS_BUSINESS_FLOW_PLAN.md`
+- ✅ Completing user journeys
+- ✅ Implementing API endpoints from `REVIEWS_API_DOCUMENTATION.md`
+- ✅ Completing features from `AUTO_REPLY_FEATURE_PLAN.md`
+
+#### Required Updates:
+1. **Status Updates in Planning Documents**:
+   - Mark completed journeys/features as "✅ Implemented"
+   - Update implementation status sections
+   - Note deviations from original plan
+   - Document actual implementation vs planned
+
+2. **Documentation Sync**:
+   - If feature is implemented, ensure it's documented in `docs/`
+   - Update `docs/architecture/data-evolution.md` if migrating from mock to real
+   - Update relevant feature documentation
+
+3. **Archive Obsolete Plans**:
+   - If entire plan is implemented, consider archiving to `docs/archive/` or `screens/archive/`
+   - Mark as "Completed" with completion date
+
+### 2. API Implementation
+
+#### When to Update:
+- ✅ Implementing endpoints from `REVIEWS_API_DOCUMENTATION.md`
+- ✅ Changing API structure or endpoints
+- ✅ Migrating from mock to real API
+
+#### Required Updates:
+1. **`REVIEWS_API_DOCUMENTATION.md`**:
+   - Mark implemented endpoints as "✅ Implemented"
+   - Update request/response examples if changed
+   - Document actual implementation differences
+   - Note any endpoints not implemented
+
+2. **`docs/api/external.md` or `docs/api/convex.md`**:
+   - Add implemented endpoints to API documentation
+   - Update with actual implementation details
+   - Document differences from specification
+
+3. **Status Tracking**:
+   - Update `docs/architecture/data-evolution.md` with API migration status
+
+### 3. Feature Plans Completion
+
+#### When to Update:
+- ✅ Completing features from `AUTO_REPLY_FEATURE_PLAN.md`
+- ✅ Implementing feature limits from `FEATURE_LIMITS_AND_TOGGLE_LOCKS.md`
+- ✅ Completing refactoring from `REFACTORING_FEATURES_SYSTEM.md`
+
+#### Required Updates:
+1. **Plan Documents**:
+   - Mark completed sections
+   - Document actual implementation
+   - Note any deviations
+
+2. **Feature Documentation**:
+   - Update `docs/features/{feature-name}.md` with implemented functionality
+   - Document in `docs/components/` if new components created
+   - Update `docs/architecture/` if architecture changed
+
+### 4. Business Flow Changes
+
+#### When to Update:
+- ✅ Implementing user journeys from `LOCATIONS_BUSINESS_FLOW_PLAN.md`
+- ✅ Changing business flow or user journeys
+- ✅ Adding new user journeys
+
+#### Required Updates:
+1. **`LOCATIONS_BUSINESS_FLOW_PLAN.md`**:
+   - Mark completed journeys
+   - Update status for each journey step
+   - Document implementation differences
+   - Note any journeys not implemented
+
+2. **Documentation**:
+   - Update `docs/views/` with implemented views
+   - Document workflows in `docs/architecture/data-flow.md`
+   - Update component documentation
+
+### 5. Status Analysis Updates
+
+#### When to Update:
+- ✅ Major project phase changes
+- ✅ Completing major milestones
+- ✅ Changing technology stack
+- ✅ Resolving critical blockers
+
+#### Required Updates:
+1. **`ANALIZA_STANU_PROJEKTU.md`** (if kept):
+   - Update status sections
+   - Mark completed items
+   - Update progress percentages
+   - Note current phase
+
+2. **Alternative**: Consider archiving if superseded by `GEMINI.md` and `docs/`
+
+### 6. Refactoring Documentation
+
+#### When to Update:
+- ✅ Completing refactoring described in `REFACTORING_FEATURES_SYSTEM.md`
+- ✅ Making architectural changes
+- ✅ Consolidating code patterns
+
+#### Required Updates:
+1. **Refactoring Documents**:
+   - Mark completed refactoring steps
+   - Document final implementation
+   - Note any deviations from plan
+
+2. **Architecture Documentation**:
+   - Update `docs/architecture/` with new patterns
+   - Document refactored structure
+   - Update examples
+
+## Document Lifecycle
+
+### Active Planning Documents
+Documents that are still being used as specifications:
+- **Keep Updated**: `LOCATIONS_BUSINESS_FLOW_PLAN.md`, `REVIEWS_API_DOCUMENTATION.md`, `AUTO_REPLY_FEATURE_PLAN.md`
+- **Status**: Mark implementation progress, update when features completed
+
+### Implementation Documentation
+Documents describing completed implementations:
+- **Archive When Superseded**: `FEATURE_LIMITS_AND_TOGGLE_LOCKS.md`, `REFACTORING_FEATURES_SYSTEM.md`
+- **Action**: Move to `docs/archive/` or `screens/archive/` when information is in main documentation
+
+### Historical Analysis
+Documents that are snapshots in time:
+- **Archive or Remove**: `ANALIZA_STANU_PROJEKTU.md` (if superseded by current docs)
+- **Action**: Archive if historical value, remove if completely obsolete
+
+### Empty Files
+- **Remove**: `CLAUDE.md` (if empty and not needed)
+
+## Enforcement Rules
+
+### Rule 1: Update Plans When Implementing
+**If you implement a feature from a planning document, you MUST update the plan to reflect completion status.**
+
+### Rule 2: Sync with Documentation
+**If a planning document describes implemented functionality, ensure it's also documented in `docs/` directory.**
+
+### Rule 3: Archive Completed Plans
+**If a planning document is fully implemented and documented elsewhere, archive it to keep workspace clean.**
+
+### Rule 4: Remove Obsolete Documents
+**If a document is completely outdated and superseded, remove it or archive it.**
+
+### Rule 5: Keep Active Plans Current
+**Active planning documents (roadmaps, specifications) MUST be updated when implementation status changes.**
+
+## Update Checklist for Planning Documents
+
+Before committing feature implementations:
+
+- [ ] Planning document updated with implementation status
+- [ ] Completed features marked in plan
+- [ ] Deviations from plan documented
+- [ ] Related documentation (`docs/`) updated
+- [ ] Obsolete plans archived or removed
+- [ ] Empty/unused files removed
+
+## Archive Strategy
+
+### When to Archive
+- Plan is fully implemented and documented in `docs/`
+- Document is historical snapshot (e.g., `ANALIZA_STANU_PROJEKTU.md`)
+- Document describes completed refactoring (information now in code/docs)
+
+### Archive Location
+- Create `docs/archive/` or `screens/archive/` directory
+- Move archived documents there
+- Add `ARCHIVED.md` note explaining why archived
+
+### Archive Format
+```markdown
+# Archived: [Document Name]
+
+**Archived Date**: [Date]
+**Reason**: [Why archived - e.g., "Fully implemented, documented in docs/features/"]
+**Replaced By**: [Link to current documentation]
+```
+
+## Commit Message Format
+
+When updating planning documents:
+
+```
+docs: planning Update [document-name] with [what changed]
+
+- Marked [feature/journey] as implemented
+- Updated implementation status
+- Archived [document] (fully implemented)
+- Removed obsolete [document]
+```
+
+Examples:
+```
+docs: planning Update LOCATIONS_BUSINESS_FLOW_PLAN - Journey 3 implemented
+docs: planning Archive FEATURE_LIMITS_AND_TOGGLE_LOCKS - documented in docs/features/
+docs: planning Remove CLAUDE.md - empty file
+```
+
+## Review Process
+
+Before archiving or removing documents:
+1. Verify information is captured in `docs/` directory
+2. Check if document is still referenced elsewhere
+3. Confirm document is truly obsolete
+4. Archive rather than delete (preserve history)
+
+## Maintenance Schedule
+
+### Active Planning Documents
+- Review monthly for implementation progress
+- Update when features are completed
+- Archive when fully implemented
+
+### Implementation Documentation
+- Review quarterly
+- Archive when superseded by main documentation
+- Keep for historical reference if valuable
+
+### Historical Analysis
+- Review annually
+- Archive or remove if completely obsolete
+- Preserve if has historical value
+
