@@ -1,0 +1,284 @@
+# GTRACK Documentation Maintenance Rules
+
+## Overview
+This file contains rules that MUST be followed when making code changes to ensure documentation stays up-to-date.
+
+## Core Principle
+**Every code change that affects functionality, API, architecture, or user-facing features MUST be reflected in documentation BEFORE or WITH the commit.**
+
+## Documentation Update Requirements
+
+### 1. Backend Changes (Convex)
+
+#### When to Update Documentation:
+- ✅ Adding new Convex functions (queries, mutations, actions)
+- ✅ Modifying existing function signatures (parameters, return types)
+- ✅ Adding new database tables or fields
+- ✅ Changing database schema
+- ✅ Adding new indexes
+- ✅ Modifying error handling or validation logic
+
+#### Required Documentation Updates:
+1. **`docs/architecture/backend.md`**:
+   - Add/update table schema documentation
+   - Document new functions with full signatures
+   - Update function behavior descriptions
+   - Document new indexes and their purpose
+
+2. **`docs/api/convex.md`**:
+   - Add complete API reference for new functions
+   - Update existing function documentation if changed
+   - Include parameters, return types, examples, error cases
+
+3. **`docs/architecture/data-flow.md`**:
+   - Update data flow diagrams if workflow changed
+   - Document new data flows for new features
+
+### 2. Frontend Changes (Vue Components)
+
+#### When to Update Documentation:
+- ✅ Creating new components
+- ✅ Adding new props, events, or slots
+- ✅ Changing component behavior or logic
+- ✅ Adding new composables or stores
+- ✅ Modifying routing structure
+- ✅ Changing state management patterns
+
+#### Required Documentation Updates:
+1. **Component Documentation** (`docs/components/`):
+   - Create new file for new components: `docs/components/{category}/{component-name}.md`
+   - Document props, events, slots, state, methods
+   - Include usage examples
+   - Document data sources and dependencies
+
+2. **`docs/architecture/frontend.md`**:
+   - Update component hierarchy if structure changed
+   - Update routing structure if routes changed
+   - Document new patterns or approaches
+
+3. **Composables/Stores Documentation** (`docs/composables/`, `docs/stores/`):
+   - Create documentation for new composables/stores
+   - Update existing if API changed
+   - Document all exported functions and their usage
+
+4. **`docs/architecture/data-flow.md`**:
+   - Update data flow for affected modules
+   - Document new data flows
+
+### 3. API Changes (External Integrations)
+
+#### When to Update Documentation:
+- ✅ Adding new external API endpoints
+- ✅ Changing API request/response formats
+- ✅ Modifying authentication methods
+- ✅ Adding new error handling
+- ✅ Changing rate limiting or retry logic
+
+#### Required Documentation Updates:
+1. **`docs/api/external.md`**:
+   - Document new endpoints with full request/response examples
+   - Update workflow diagrams
+   - Document error cases and handling
+   - Update authentication/configuration instructions
+
+### 4. Feature Changes
+
+#### When to Update Documentation:
+- ✅ Adding new features
+- ✅ Modifying feature limits or plans
+- ✅ Changing feature behavior
+- ✅ Adding new feature flags
+
+#### Required Documentation Updates:
+1. **`docs/features/{feature-name}.md`**:
+   - Create or update feature documentation
+   - Document workflow, components, API usage
+   - Update limits and plan requirements
+
+2. **`docs/features/system.md`**:
+   - Update feature definitions if config changed
+   - Document new features in hierarchy
+
+3. **`docs/features/limits.md`**:
+   - Update limit definitions if changed
+   - Document enforcement logic changes
+
+### 5. Configuration Changes
+
+#### When to Update Documentation:
+- ✅ Modifying `src/config/features.js`
+- ✅ Changing environment variables
+- ✅ Updating build configuration
+- ✅ Modifying routing configuration
+
+#### Required Documentation Updates:
+1. **`docs/architecture/overview.md`**:
+   - Update technology stack versions
+   - Document new configuration options
+
+2. **`docs/guides/setup.md`**:
+   - Update environment variable documentation
+   - Update installation steps if changed
+
+3. **`docs/features/system.md`**:
+   - Update feature configuration documentation
+
+### 6. Data Model Changes
+
+#### When to Update Documentation:
+- ✅ Migrating from mock to real data
+- ✅ Changing data structures
+- ✅ Adding new data sources
+
+#### Required Documentation Updates:
+1. **`docs/architecture/data-evolution.md`**:
+   - Update migration status table
+   - Document migration progress
+   - Update migration checklist
+
+2. **`docs/architecture/data-flow.md`**:
+   - Update data flow for migrated modules
+   - Document new data sources
+
+## Documentation Update Checklist
+
+Before committing, verify:
+
+- [ ] All new functions/APIs are documented
+- [ ] All modified functions/APIs have updated documentation
+- [ ] Component documentation reflects current props/events/behavior
+- [ ] Data flow diagrams are updated if workflows changed
+- [ ] Examples in documentation are current and working
+- [ ] Migration status is updated if data sources changed
+- [ ] README.md and SUMMARY.md are updated if structure changed
+
+## Documentation File Locations
+
+### Architecture
+- `docs/architecture/overview.md` - System overview, stack, patterns
+- `docs/architecture/backend.md` - Backend schema, functions
+- `docs/architecture/frontend.md` - Frontend structure, patterns
+- `docs/architecture/data-flow.md` - Data flow patterns
+- `docs/architecture/data-evolution.md` - Mock vs real data status
+
+### Components
+- `docs/components/views/` - View components
+- `docs/components/reviews/` - Reviews module components
+- `docs/components/settings/` - Settings module components
+- `docs/components/map/` - Map components
+- `docs/components/common/` - Shared components
+
+### Composables & Stores
+- `docs/composables/` - Composable documentation
+- `docs/stores/` - Store documentation
+
+### API
+- `docs/api/convex.md` - Convex API reference
+- `docs/api/external.md` - External API integrations
+
+### Features
+- `docs/features/system.md` - Feature system
+- `docs/features/limits.md` - Plans and limits
+- `docs/features/{feature-name}.md` - Individual features
+
+### Views
+- `docs/views/dashboard.md` - Dashboard view
+- `docs/views/reviews.md` - Reviews view
+- `docs/views/settings.md` - Settings view
+
+### Guides
+- `docs/guides/setup.md` - Setup guide
+- `docs/guides/deployment.md` - Deployment guide
+
+## Documentation Format Standards
+
+### Code Examples
+- Use actual code from the codebase when possible
+- Include file paths and line numbers for references
+- Show complete examples, not fragments
+- Include error handling examples
+
+### Data Structures
+- Show TypeScript-like type definitions
+- Include example values
+- Document optional vs required fields
+- Explain relationships between fields
+
+### Workflows
+- Use step-by-step numbered lists
+- Include decision points (if/then)
+- Show error paths
+- Include timing information where relevant
+
+### API Documentation
+- Include full function signatures
+- Document all parameters with types
+- Show return types
+- Include error cases
+- Provide usage examples
+- Document side effects
+
+## Enforcement Rules
+
+### Rule 1: No Undocumented Features
+**If you add a new feature, you MUST create or update documentation before committing.**
+
+### Rule 2: No Undocumented API Changes
+**If you modify an API (Convex function, external endpoint), you MUST update API documentation before committing.**
+
+### Rule 3: No Undocumented Components
+**If you create a new component, you MUST create component documentation before committing.**
+
+### Rule 4: Keep Examples Current
+**If you change code that's referenced in documentation examples, you MUST update the examples.**
+
+### Rule 5: Update Migration Status
+**If you migrate from mock to real data, you MUST update data-evolution.md before committing.**
+
+### Rule 6: Update Architecture Docs
+**If you change architectural patterns (state management, data flow, etc.), you MUST update architecture documentation.**
+
+## Commit Message Format
+
+When updating documentation, include in commit message:
+
+```
+docs: [category] [brief description]
+
+- Updated [specific file] with [what changed]
+- Added documentation for [new feature/component]
+- Fixed documentation for [corrected item]
+```
+
+Examples:
+```
+docs: backend Add new keywords.getStats query documentation
+docs: components Document new ReviewItem component
+docs: api Update DataForSEO integration workflow
+docs: architecture Update data flow for settings module
+```
+
+## Review Process
+
+Before merging PRs:
+1. Verify all code changes have corresponding documentation updates
+2. Check that examples in documentation still work
+3. Ensure documentation structure (SUMMARY.md) is updated
+4. Verify no broken links in documentation
+
+## Exceptions
+
+Documentation updates may be deferred ONLY if:
+- Change is purely cosmetic (styling, formatting)
+- Change is in commented-out code
+- Change is in test files only
+- Documentation update is in separate follow-up commit (documented in PR)
+
+## Maintenance
+
+- Review documentation quarterly for accuracy
+- Update examples when APIs change
+- Remove outdated sections
+- Keep migration status current
+- Update technology stack versions regularly
+
