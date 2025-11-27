@@ -295,6 +295,190 @@ export const FEATURES = {
         requiredPlan: PLANS.ENTERPRISE,
         description: 'Automatyczna aktualizacja godzin w dni świąteczne',
         icon: 'pi pi-clock'
+    },
+
+    // MEDIA MODULE
+    media: {
+        id: 'media',
+        label: 'Media',
+        requiredPlan: PLANS.BASIC,
+        description: 'Zarządzanie zdjęciami i wideo profilu',
+        icon: 'pi pi-images',
+        limits: {
+            maxPhotosPerMonth: { [PLANS.BASIC]: 20, [PLANS.PROFESSIONAL]: 100, [PLANS.ENTERPRISE]: 999 }
+        }
+    },
+    mediaSnapshots: {
+        id: 'mediaSnapshots',
+        parentId: 'media',
+        label: 'Historia zdjęć',
+        requiredPlan: PLANS.PROFESSIONAL,
+        description: 'Śledzenie zmian w galerii zdjęć',
+        icon: 'pi pi-history'
+    },
+    mediaBulkUpload: {
+        id: 'mediaBulkUpload',
+        parentId: 'media',
+        label: 'Masowe przesyłanie',
+        requiredPlan: PLANS.PROFESSIONAL,
+        description: 'Przesyłanie wielu zdjęć jednocześnie',
+        icon: 'pi pi-upload',
+        limits: {
+            maxBulkUpload: { [PLANS.BASIC]: 5, [PLANS.PROFESSIONAL]: 25, [PLANS.ENTERPRISE]: 100 }
+        }
+    },
+
+    // SMART TASKS MODULE
+    tasks: {
+        id: 'tasks',
+        label: 'Smart Tasks',
+        requiredPlan: PLANS.BASIC,
+        description: 'Inteligentne zadania SEO i optymalizacji',
+        icon: 'pi pi-check-square',
+        limits: {
+            maxActiveTasks: { [PLANS.BASIC]: 10, [PLANS.PROFESSIONAL]: 50, [PLANS.ENTERPRISE]: 999 }
+        }
+    },
+    taskAutoDetection: {
+        id: 'taskAutoDetection',
+        parentId: 'tasks',
+        label: 'Auto-wykrywanie',
+        requiredPlan: PLANS.PROFESSIONAL,
+        description: 'Automatyczne wykrywanie problemów SEO',
+        icon: 'pi pi-bolt'
+    },
+    taskPrioritization: {
+        id: 'taskPrioritization',
+        parentId: 'tasks',
+        label: 'Priorytetyzacja AI',
+        requiredPlan: PLANS.ENTERPRISE,
+        description: 'Priorytetyzacja zadań przez AI',
+        icon: 'pi pi-sparkles'
+    },
+
+    // MONITORING MODULE
+    monitoring: {
+        id: 'monitoring',
+        label: 'Monitoring',
+        requiredPlan: PLANS.BASIC,
+        description: 'Ochrona i monitoring zmian w wizytówce',
+        icon: 'pi pi-shield',
+        limits: {
+            maxIncidentsPerMonth: { [PLANS.BASIC]: 50, [PLANS.PROFESSIONAL]: 500, [PLANS.ENTERPRISE]: 9999 }
+        }
+    },
+    monitoringAlerts: {
+        id: 'monitoringAlerts',
+        parentId: 'monitoring',
+        label: 'Powiadomienia',
+        requiredPlan: PLANS.BASIC,
+        description: 'Powiadomienia o zmianach w profilu',
+        icon: 'pi pi-bell'
+    },
+    monitoringAutoRevert: {
+        id: 'monitoringAutoRevert',
+        parentId: 'monitoring',
+        label: 'Auto-przywracanie',
+        requiredPlan: PLANS.ENTERPRISE,
+        description: 'Automatyczne przywracanie nieautoryzowanych zmian',
+        icon: 'pi pi-undo'
+    },
+    monitoringChangeHistory: {
+        id: 'monitoringChangeHistory',
+        parentId: 'monitoring',
+        label: 'Historia zmian',
+        requiredPlan: PLANS.PROFESSIONAL,
+        description: 'Pełna historia zmian w wizytówce',
+        icon: 'pi pi-history',
+        limits: {
+            historyRetentionDays: { [PLANS.BASIC]: 7, [PLANS.PROFESSIONAL]: 90, [PLANS.ENTERPRISE]: 365 }
+        }
+    },
+
+    // RAPORTY MODULE
+    raporty: {
+        id: 'raporty',
+        label: 'Raporty',
+        requiredPlan: PLANS.BASIC,
+        description: 'Raporty i analiza wyników',
+        icon: 'pi pi-chart-bar'
+    },
+    raportyPozycje: {
+        id: 'raportyPozycje',
+        parentId: 'raporty',
+        label: 'Pozycje / Rankingi',
+        requiredPlan: PLANS.BASIC,
+        description: 'Raport pozycji w wynikach wyszukiwania',
+        icon: 'pi pi-list',
+        limits: {
+            maxGridSize: { [PLANS.BASIC]: 25, [PLANS.PROFESSIONAL]: 49, [PLANS.ENTERPRISE]: 81 }
+        }
+    },
+    raportyKonkurencja: {
+        id: 'raportyKonkurencja',
+        parentId: 'raporty',
+        label: 'Konkurencja',
+        requiredPlan: PLANS.PROFESSIONAL,
+        description: 'Analiza porównawcza z konkurencją',
+        icon: 'pi pi-users',
+        limits: {
+            maxCompetitorsInReport: { [PLANS.BASIC]: 0, [PLANS.PROFESSIONAL]: 10, [PLANS.ENTERPRISE]: 50 }
+        }
+    },
+    raportyAudyt: {
+        id: 'raportyAudyt',
+        parentId: 'raporty',
+        label: 'Audyt wizytówki',
+        requiredPlan: PLANS.BASIC,
+        description: 'Pełny audyt profilu z rekomendacjami',
+        icon: 'pi pi-check-circle'
+    },
+    raportyExport: {
+        id: 'raportyExport',
+        parentId: 'raporty',
+        label: 'Eksport PDF',
+        requiredPlan: PLANS.PROFESSIONAL,
+        description: 'Eksport raportów do PDF',
+        icon: 'pi pi-file-pdf'
+    },
+
+    // POSTS MODULE
+    posts: {
+        id: 'posts',
+        label: 'Posty',
+        requiredPlan: PLANS.BASIC,
+        description: 'Tworzenie i zarządzanie postami Google Business Profile',
+        icon: 'pi pi-pencil',
+        limits: {
+            maxPostsPerMonth: { [PLANS.BASIC]: 5, [PLANS.PROFESSIONAL]: 30, [PLANS.ENTERPRISE]: 999 }
+        }
+    },
+    postsScheduling: {
+        id: 'postsScheduling',
+        parentId: 'posts',
+        label: 'Planowanie postów',
+        requiredPlan: PLANS.PROFESSIONAL,
+        description: 'Planowanie publikacji postów na określony termin',
+        icon: 'pi pi-calendar',
+        limits: {
+            maxScheduledPosts: { [PLANS.BASIC]: 0, [PLANS.PROFESSIONAL]: 10, [PLANS.ENTERPRISE]: 100 }
+        }
+    },
+    postsAnalytics: {
+        id: 'postsAnalytics',
+        parentId: 'posts',
+        label: 'Analityka postów',
+        requiredPlan: PLANS.PROFESSIONAL,
+        description: 'Szczegółowa analiza wyświetleń i kliknięć',
+        icon: 'pi pi-chart-bar'
+    },
+    postsAiContent: {
+        id: 'postsAiContent',
+        parentId: 'posts',
+        label: 'Treści AI',
+        requiredPlan: PLANS.ENTERPRISE,
+        description: 'Generowanie treści postów przez AI',
+        icon: 'pi pi-sparkles'
     }
 };
 

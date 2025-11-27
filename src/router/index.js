@@ -1,8 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { h } from 'vue';
 import DashboardLayout from '../layouts/DashboardLayout.vue';
+import DashboardView from '../views/DashboardView.vue';
 import LocationMapView from '../views/LocationMapView.vue';
 import LocationSettingsView from '../views/LocationSettingsView.vue';
+import BusinessInfoView from '../views/BusinessInfoView.vue';
+import PostsView from '../views/PostsView.vue';
+import MediaView from '../views/MediaView.vue';
+import SmartTasksView from '../views/SmartTasksView.vue';
+import MonitoringView from '../views/MonitoringView.vue';
+import RaportyView from '../views/RaportyView.vue';
 import ReviewsDashboard from '../components/gtrack/reviews/ReviewsDashboard.vue';
 
 // Reviews sub-components
@@ -38,6 +45,12 @@ const routes = [
         name: 'map',
         component: LocationMapView,
         meta: { label: 'Mapa' }
+      },
+      {
+        path: 'dashboard',
+        name: 'dashboard',
+        component: DashboardView,
+        meta: { label: 'Dashboard' }
       },
       {
         path: 'reviews',
@@ -91,26 +104,42 @@ const routes = [
         component: LocationSettingsView,
         meta: { label: 'Ustawienia' }
       },
-      // Placeholders using render functions to avoid runtime compiler dependency
       {
         path: 'posts',
         name: 'posts',
-        component: { render: () => h('div', { class: 'p-6' }, 'Widok Posty (w przygotowaniu)') }
+        component: PostsView,
+        meta: { label: 'Posty' }
       },
+      {
+        path: 'media',
+        name: 'media',
+        component: MediaView,
+        meta: { label: 'Media' }
+      },
+      {
+        path: 'tasks',
+        name: 'tasks',
+        component: SmartTasksView,
+        meta: { label: 'Smart Tasks' }
+      },
+      {
+        path: 'monitoring',
+        name: 'monitoring',
+        component: MonitoringView,
+        meta: { label: 'Monitoring' }
+      },
+      {
+        path: 'raporty',
+        name: 'raporty',
+        component: RaportyView,
+        meta: { label: 'Raporty' }
+      },
+      // Placeholders using render functions to avoid runtime compiler dependency
       {
         path: 'content',
         name: 'content',
-        component: { render: () => h('div', { class: 'p-6' }, 'Widok Wizytówka (w przygotowaniu)') }
-      },
-      {
-        path: 'keywords',
-        name: 'keywords-report',
-        component: { render: () => h('div', { class: 'p-6' }, 'Raport Pozycje (w przygotowaniu)') }
-      },
-      {
-        path: 'comparison',
-        name: 'comparison',
-        component: { render: () => h('div', { class: 'p-6' }, 'Raport Konkurencja (w przygotowaniu)') }
+        component: BusinessInfoView,
+        meta: { label: 'Wizytówka' }
       }
     ]
   }

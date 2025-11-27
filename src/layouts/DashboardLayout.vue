@@ -77,24 +77,31 @@ const isLoadingReport = ref(false);
 
 // Compute active tab based on current route
 const activeTab = computed(() => {
+  if (route.name === 'dashboard') return 'dashboard';
   if (route.path.includes('/reviews')) return 'reviews';
   if (route.name === 'settings') return 'settings';
   if (route.name === 'posts') return 'posts';
+  if (route.name === 'media') return 'media';
+  if (route.name === 'tasks') return 'tasks';
+  if (route.name === 'monitoring') return 'monitoring';
+  if (route.name === 'raporty') return 'raporty';
   if (route.name === 'content') return 'content';
-  if (route.name === 'keywords-report') return 'keywords';
-  if (route.name === 'comparison') return 'comparison';
   return 'map'; // Default
 });
 
 const showCalendar = computed(() => {
-    return activeTab.value !== 'settings' && activeTab.value !== 'reviews';
+    const hiddenTabs = ['settings', 'reviews', 'dashboard', 'content', 'posts', 'media', 'tasks', 'monitoring', 'raporty'];
+    return !hiddenTabs.includes(activeTab.value);
 });
 
 const handleTabChange = (tabId) => {
   // Map tab IDs to route names or paths
   const locationId = route.params.locationId || 'demo';
-  
+
   switch (tabId) {
+    case 'dashboard':
+      router.push({ name: 'dashboard', params: { locationId } });
+      break;
     case 'map':
       router.push({ name: 'map', params: { locationId } });
       break;
@@ -107,15 +114,21 @@ const handleTabChange = (tabId) => {
     case 'posts':
       router.push({ name: 'posts', params: { locationId } });
       break;
+    case 'media':
+      router.push({ name: 'media', params: { locationId } });
+      break;
+    case 'tasks':
+      router.push({ name: 'tasks', params: { locationId } });
+      break;
+    case 'monitoring':
+      router.push({ name: 'monitoring', params: { locationId } });
+      break;
+    case 'raporty':
+      router.push({ name: 'raporty', params: { locationId } });
+      break;
     case 'content':
       router.push({ name: 'content', params: { locationId } });
       break;
-    case 'keywords': // Report
-        router.push({ name: 'keywords-report', params: { locationId } });
-        break;
-    case 'comparison': // Report
-        router.push({ name: 'comparison', params: { locationId } });
-        break;
     default:
       router.push({ name: 'map', params: { locationId } });
   }

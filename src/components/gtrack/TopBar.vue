@@ -196,9 +196,15 @@ const isFeatureVisible = (featureKey) => {
 
 const menuItems = computed(() => {
   const allItems = [
-    { 
-      id: 'map', 
-      label: 'Mapa', 
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: 'pi pi-th-large',
+      command: () => emit('update:activeTab', 'dashboard')
+    },
+    {
+      id: 'map',
+      label: 'Mapa',
       icon: 'pi pi-map',
       command: () => emit('update:activeTab', 'map'),
       featureKey: 'map'
@@ -221,34 +227,42 @@ const menuItems = computed(() => {
           command: createCommand({ id: 'posts' }, 'postPublishing'),
           featureKey: 'postPublishing'
         },
-        { 
-          id: 'content', 
-          label: 'Wizytówka', 
+        {
+          id: 'content',
+          label: 'Wizytówka',
           icon: 'pi pi-id-card',
           command: () => emit('update:activeTab', 'content'),
           featureKey: 'content'
+        },
+        {
+          id: 'media',
+          label: 'Media',
+          icon: 'pi pi-images',
+          command: () => emit('update:activeTab', 'media'),
+          featureKey: 'media'
+        },
+        {
+          id: 'tasks',
+          label: 'Smart Tasks',
+          icon: 'pi pi-check-square',
+          command: () => emit('update:activeTab', 'tasks'),
+          featureKey: 'tasks'
+        },
+        {
+          id: 'monitoring',
+          label: 'Monitoring',
+          icon: 'pi pi-shield',
+          command: () => emit('update:activeTab', 'monitoring'),
+          featureKey: 'monitoring'
         }
       ].filter(item => isFeatureVisible(item.featureKey))
     },
     {
+      id: 'raporty',
       label: 'Raporty',
       icon: 'pi pi-chart-bar',
-      items: [
-        { 
-          id: 'keywords', 
-          label: 'Pozycje', 
-          icon: 'pi pi-list',
-          command: createCommand({ id: 'keywords' }, 'keywords'),
-          featureKey: 'keywords'
-        },
-        { 
-          id: 'comparison', 
-          label: 'Konkurencja', 
-          icon: 'pi pi-users',
-          command: createCommand({ id: 'comparison' }, 'comparison'),
-          featureKey: 'comparison'
-        }
-      ].filter(item => isFeatureVisible(item.featureKey))
+      command: () => emit('update:activeTab', 'raporty'),
+      featureKey: 'raporty'
     },
     { 
       id: 'settings', 
